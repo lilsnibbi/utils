@@ -325,7 +325,7 @@ export class PaginationBuilder {
 	): Promise<void> {
 		if (this.mode === "embed" && !this.embedTemplate)
 			throw new Error(
-				"[@kyvrixon/utils]: Pagination: embedTemplate is in a corrupted state",
+				"[@lilsnibbi/utils]: Pagination: embedTemplate is in a corrupted state",
 			);
 
 		const allowedMentions = { parse: [] as const, repliedUser: false };
@@ -419,7 +419,7 @@ export class PaginationBuilder {
 	private generateContainer(): ContainerBuilder {
 		if (!this.layout)
 			throw new Error(
-				"[@kyvrixon/utils]: Pagination: layout is in a corrupted state",
+				"[@lilsnibbi/utils]: Pagination: layout is in a corrupted state",
 			);
 
 		const page = Math.floor(this.currentIndex / this.entriesPerPage);
@@ -454,7 +454,7 @@ export class PaginationBuilder {
 	private generateEmbed(): EmbedBuilder {
 		if (!this.embedTemplate)
 			throw new Error(
-				"[@kyvrixon/utils]: Pagination: embedTemplate is in a corrupted state",
+				"[@lilsnibbi/utils]: Pagination: embedTemplate is in a corrupted state",
 			);
 
 		const page = Math.floor(this.currentIndex / this.entriesPerPage);

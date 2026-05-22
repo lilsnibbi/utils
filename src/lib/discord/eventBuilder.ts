@@ -4,7 +4,7 @@ import type { Client, ClientEvents, RestEvents } from "discord.js";
 /**
  * Augment this interface via module declaration to register custom event types.
  * @example
- * declare module "@kyvrixon/utils/discord" {
+ * declare module "@lilsnibbi/utils/discord" {
  *   interface DiscordEventCustomType {
  *     myEvent: [data: string];
  *   }
@@ -20,7 +20,7 @@ export type EventMap<T extends "client" | "rest" | "custom"> =
 		: T extends "rest"
 			? RestEvents
 			: keyof DiscordEventCustomType extends never
-				? { "sooo.. there's no custom events..": [] }
+				? { "no events made": [] }
 				: DiscordEventCustomType;
 
 /** Resolves the argument tuple for a given event type + key pair. */
