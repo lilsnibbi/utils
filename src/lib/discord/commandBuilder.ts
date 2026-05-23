@@ -26,7 +26,7 @@ export interface DiscordCommandMetadata extends Record<string, unknown> {}
  * @typeParam C - The bot's `Client` type. Inferred from args[0] in `method`.
  *
  * @example To extend the `metadata` types
- * declare module "@kyvrixon/utils" {
+ * declare module "@lilsnibbi/utils" {
  *     interface DiscordCommandMetadata {
  *         cooldown?: number;
  *         category?: string;

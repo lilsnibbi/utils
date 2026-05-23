@@ -137,7 +137,11 @@ export class LoggerModule {
 		console.log(`\n${left} ${bold(trimmed)} ${right}`);
 	}
 
-	private log(level: LogLevel, message: unknown, raw: boolean): string | undefined {
+	private log(
+		level: LogLevel,
+		message: unknown,
+		raw: boolean,
+	): string | undefined {
 		if (this.levelPriority[level] < this.levelPriority[this.level]) return;
 		const msg = this.formatMessage(level, message);
 		if (raw) {

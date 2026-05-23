@@ -1,10 +1,10 @@
-# @kyvrixon/utils — CLAUDE.md
+# @lilsnibbi/utils — CLAUDE.md
 
 ## Project Overview
 
-A personal TypeScript utility library published to npm as `@kyvrixon/utils`. Designed exclusively for the **Bun runtime**. Ships raw TypeScript source — no build step.
+A personal TypeScript utility library published to npm as `@lilsnibbi/utils`. Designed exclusively for the **Bun runtime**. Ships raw TypeScript source — no build step.
 
-- **Package**: `@kyvrixon/utils` (public, MIT)
+- **Package**: `@lilsnibbi/utils` (public, MIT)
 - **Runtime**: Bun `1.3.11`
 - **Language**: TypeScript (strict, ESNext, bundler module resolution)
 - **Linter/Formatter**: Biome `2.4.9`
@@ -34,12 +34,12 @@ src/
     formatSeconds.ts                # calendar-aware duration formatter
     toOrdinal.ts                    # ordinal number suffix (1st, 2nd…)
     discord-utils/
-      index.ts                      # barrel for @kyvrixon/utils/discord-utils
+      index.ts                      # barrel for @lilsnibbi/utils/discord-utils
       Command.ts                    # DiscordCommand<C> class
       Event.ts                      # DiscordEvent<V, T, K> class
       createPagination.ts           # DiscordPagination class (Components V2 paginator)
     modules/
-      index.ts                      # barrel for @kyvrixon/utils/modules
+      index.ts                      # barrel for @lilsnibbi/utils/modules
       LoggerModule.ts               # chalk-based structured logger
 tests/
   formatSeconds.test.ts
@@ -70,7 +70,7 @@ Class wrapping a discord.js event handler. Supports three event types:
 
 Custom event example:
 ```ts
-declare module "@kyvrixon/utils" {
+declare module "@lilsnibbi/utils" {
   interface DiscordEventCustomType {
     myEvent: [data: string];
   }
@@ -150,13 +150,13 @@ The package ships `src/` directly. Consumers must use Bun (or a bundler that han
 The package uses wildcard subpath exports — each folder under `src/lib/` with an `index.ts` barrel is automatically available as a subpath:
 
 ```ts
-import { formatSeconds } from "@kyvrixon/utils";               // root
-import { DiscordCommand } from "@kyvrixon/utils/discord-utils"; // subpath
-import { LoggerModule } from "@kyvrixon/utils/modules";         // subpath
+import { formatSeconds } from "@lilsnibbi/utils";               // root
+import { DiscordCommand } from "@lilsnibbi/utils/discord-utils"; // subpath
+import { LoggerModule } from "@lilsnibbi/utils/modules";         // subpath
 ```
 
 To add a new subpath, create a folder under `src/lib/` with an `index.ts` that re-exports its modules. No `package.json` changes needed — the `"./*"` wildcard export handles it dynamically.
 
 ## Renovate
 
-Auto-dependency updates are configured in `renovate.json`, targeting the `dev` branch. All update types are scheduled "at any time". PRs are assigned/reviewed by `Kyvrixon`.
+Auto-dependency updates are configured in `renovate.json`, targeting the `dev` branch. All update types are scheduled "at any time". PRs are assigned/reviewed by `lilsnibbi`.
