@@ -1,7 +1,7 @@
 {
 	"name": "@lilsnibbi/utils",
 	"main": "./src/index.ts",
-	"version": "1.5.3",
+	"version": "1.5.4",
 	"type": "module",
 	"private": false,
 	"license": "MIT",
