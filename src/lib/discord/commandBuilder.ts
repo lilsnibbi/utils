@@ -21,6 +21,12 @@ export type DiscordCommandInteraction =
 
 export interface DiscordCommandMetadata extends Record<string, unknown> {}
 
+type DefaultMetadata<T> = keyof T extends never
+	? { "No metadata values in types": never }
+	: T;
+
+type Metadata = DefaultMetadata<DiscordCommandMetadata>;
+
 /**
  * Wraps a discord.js slash or context menu command with typed `execute` and optional `autocomplete` handlers.
  * @typeParam C - The bot's `Client` type. Inferred from args[0] in `method`.
@@ -43,11 +49,11 @@ export class DiscordCommand<C extends Client = Client> {
 		client: C,
 		interaction: AutocompleteInteraction,
 	) => Promise<void>;
-	public metadata: DiscordCommandMetadata;
+	public metadata: Metadata;
 
 	constructor(ops: {
 		data: CommandData;
-		metadata: DiscordCommandMetadata;
+		metadata: Metadata;
 		execute: (
 			client: C,
 			interaction: DiscordCommandInteraction,

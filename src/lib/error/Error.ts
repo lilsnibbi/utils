@@ -1,4 +1,4 @@
-export interface AppErrorCodes extends Record<string, unknown> { }
+export interface AppErrorCodes extends Record<string, unknown> {}
 
 export class AppError extends Error {
 	constructor(
@@ -27,15 +27,15 @@ export class AppError extends Error {
 			/** Original error that caused this */
 			cause?: unknown;
 			/** Hide the stack trace */
-		omitStack: boolean;
-		}
+			omitStack: boolean;
+		},
 	) {
 		super(message, { cause: meta?.cause });
 
 		this.name = "AppError";
 		this.meta = {
 			omitStack: true,
-			...meta
+			...meta,
 		};
 
 		if (this.meta.omitStack) this.stack = undefined;
