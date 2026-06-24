@@ -59,4 +59,11 @@ describe("randomInt", () => {
 		expect(result).toBeGreaterThanOrEqual(min);
 		expect(result).toBeLessThanOrEqual(max);
 	});
+
+	test("handles float inputs correctly", () => {
+		const result = randomInt(1.5, 4.5);
+		expect(result).toBeGreaterThanOrEqual(2);
+		expect(result).toBeLessThanOrEqual(4);
+		expect(Number.isInteger(result)).toBe(true);
+	});
 });

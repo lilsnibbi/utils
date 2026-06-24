@@ -34,10 +34,10 @@ describe("chunk", () => {
 	});
 
 	test("handles float sizes by slicing up to the floor value correctly during iteration", () => {
-		// slice(0, 2.5) evaluates to slice(0, 2), effectively chunking by 2 but incrementing i by 2.5
-		// This tests the engine's resilience, though integers should ideally be provided
+		// Enforces integer chunking by flooring 2.5 to 2.
+		// Verifies that no array elements are lost in the process.
 		const res = chunk([1, 2, 3, 4, 5], 2.5);
-		expect(Array.isArray(res)).toBe(true);
+		expect(res).toEqual([[1, 2], [3, 4], [5]]);
 	});
 
 	test("preserves reference to objects inside chunks", () => {

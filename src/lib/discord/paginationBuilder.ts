@@ -1,4 +1,3 @@
-import { randomUUIDv7 } from "bun";
 import {
 	ActionRowBuilder,
 	ButtonBuilder,
@@ -212,7 +211,7 @@ export class PaginationBuilder {
 		this.buttonOptions = buttons;
 		this.showSkipButtons = showSkipButtons;
 		this.onEnd = onEnd;
-		this.prefix = `~PAGINATION_${randomUUIDv7()}_`;
+		this.prefix = `~PAGINATION_${crypto.randomUUID()}_`;
 		this.totalPages = Math.ceil(list.length / entriesPerPage);
 
 		this.mode = options.type;
@@ -591,7 +590,7 @@ export class PaginationBuilder {
 		try {
 			const payload = this.buildPayload();
 
-			if (this.isMessage && this.replyMessage) {
+			if (this.replyMessage && (!this.interaction || !this.ephemeral)) {
 				await this.replyMessage.edit(payload);
 			} else if (this.interaction) {
 				await this.interaction.editReply(payload);

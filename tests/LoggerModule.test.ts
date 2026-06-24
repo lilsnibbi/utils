@@ -29,14 +29,14 @@ afterEach(() => {
 describe("main", () => {
 	describe("notif", () => {
 		test("prints to console.log with NOTIF label", () => {
-			logger.log("NOTIF", "hello");
+			logger.notif("hello");
 			expect(logSpy).toHaveBeenCalledTimes(1);
 			expect(logSpy.mock.calls[0][0]).toContain("NOTIF");
 			expect(logSpy.mock.calls[0][0]).toContain("hello");
 		});
 
 		test("raw flag returns the string without printing", () => {
-			const result = logger.log("NOTIF", "raw test", true);
+			const result = logger.notif("raw test", true);
 			expect(logSpy).not.toHaveBeenCalled();
 			expect(typeof result).toBe("string");
 			expect(result).toContain("raw test");
@@ -46,14 +46,14 @@ describe("main", () => {
 
 	describe("alert", () => {
 		test("prints to console.warn with ALERT label", () => {
-			logger.log("ALERT", "heads up");
+			logger.alert("heads up");
 			expect(warnSpy).toHaveBeenCalledTimes(1);
 			expect(warnSpy.mock.calls[0][0]).toContain("ALERT");
 			expect(warnSpy.mock.calls[0][0]).toContain("heads up");
 		});
 
 		test("raw flag returns the string without printing", () => {
-			const result = logger.log("ALERT", "raw alert", true);
+			const result = logger.alert("raw alert", true);
 			expect(warnSpy).not.toHaveBeenCalled();
 			expect(result).toContain("ALERT");
 		});
@@ -61,7 +61,7 @@ describe("main", () => {
 
 	describe("error", () => {
 		test("prints to console.error with ERROR label", () => {
-			logger.log("ERROR", "something broke");
+			logger.error("something broke");
 			expect(errorSpy).toHaveBeenCalledTimes(1);
 			expect(errorSpy.mock.calls[0][0]).toContain("ERROR");
 			expect(errorSpy.mock.calls[0][0]).toContain("something broke");
@@ -69,14 +69,14 @@ describe("main", () => {
 
 		test("logs the Error object", () => {
 			const err = new Error("db failed");
-			logger.log("ERROR", err);
+			logger.error(err);
 			const output = errorSpy.mock.calls[0][0];
-			expect(output.message).toContain("db failed");
-			expect(output.message).toContain("ERROR");
+			expect(output).toContain("db failed");
+			expect(output).toContain("ERROR");
 		});
 
 		test("raw flag returns the string without printing", () => {
-			const result = logger.log("ERROR", "raw error", true);
+			const result = logger.error("raw error", true);
 			expect(errorSpy).not.toHaveBeenCalled();
 			expect(result).toContain("ERROR");
 		});
@@ -84,14 +84,14 @@ describe("main", () => {
 
 	describe("debug", () => {
 		test("prints to console.debug with DEBUG label", () => {
-			logger.log("DEBUG", "trace info");
+			logger.debug("trace info");
 			expect(debugSpy).toHaveBeenCalledTimes(1);
 			expect(debugSpy.mock.calls[0][0]).toContain("DEBUG");
 			expect(debugSpy.mock.calls[0][0]).toContain("trace info");
 		});
 
 		test("raw flag returns the string without printing", () => {
-			const result = logger.log("DEBUG", "raw debug", true);
+			const result = logger.debug("raw debug", true);
 			expect(debugSpy).not.toHaveBeenCalled();
 			expect(result).toContain("DEBUG");
 		});
@@ -99,12 +99,12 @@ describe("main", () => {
 
 	describe("timestamp format", () => {
 		test("matches [Day HH:mm:ss.ms] pattern", () => {
-			const output = logger.log("NOTIF", "ts check", true) as string;
+			const output = logger.notif("ts check", true) as string;
 			expect(output).toMatch(/\[.*?\d{2}:\d{2}:\d{2}\.\d{3}]/);
 		});
 
 		test("milliseconds are zero-padded to 3 digits", () => {
-			const output = logger.log("NOTIF", "pad check", true) as string;
+			const output = logger.notif("pad check", true) as string;
 			const match = output.match(/\.(\d{3})]/);
 			expect(match).not.toBeNull();
 			expect(match?.[1]?.length).toBe(3);
@@ -135,20 +135,20 @@ describe("main", () => {
 
 	describe("non-string messages", () => {
 		test("numbers are stringified", () => {
-			const output = logger.log("NOTIF", 42, true) as string;
+			const output = logger.notif(42, true) as string;
 			expect(output).toContain("42");
 		});
 
 		test("objects are formatted using inspect", () => {
-			const output = logger.log("NOTIF", { key: "val" }, true) as string;
+			const output = logger.notif({ key: "val" }, true) as string;
 			expect(output).toContain("key");
 			expect(output).toContain("val");
 			expect(output).not.toContain("[object Object]");
 		});
 
 		test("null and undefined are stringified", () => {
-			expect(logger.log("NOTIF", null, true)).toContain("null");
-			expect(logger.log("NOTIF", undefined, true)).toContain("undefined");
+			expect(logger.notif(null, true)).toContain("null");
+			expect(logger.notif(undefined, true)).toContain("undefined");
 		});
 	});
 });

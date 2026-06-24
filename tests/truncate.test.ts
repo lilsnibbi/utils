@@ -35,13 +35,23 @@ describe("truncate", () => {
 		expect(truncate("       ", 5)).toBe("  ...");
 	});
 
-	test("handles emoji characters (length is determined by UTF-16 code units)", () => {
-		// A rocket emoji "🚀" consists of 2 UTF-16 code units
-		// slice(0, 5 - 3) = slice(0, 2) which gets exactly one rocket emoji
-		expect(truncate("🚀🚀🚀🚀", 5)).toBe("🚀...");
-		// Family emoji is 11 code units: 👨(2) + ZWJ(1) + 👩(2) + ZWJ(1) + 👧(2) + ZWJ(1) + 👦(2)
-		// slice(0, 2) gives just 👨
-		expect(truncate("👨‍👩‍👧‍👦", 5)).toBe("👨..."); 
+	test("handles emoji characters (length is determined by visual graphemes)", () => {
+		// A rocket emoji "🚀" is 1 grapheme.
+		// Slicing "🚀🚀🚀🚀" at 5 characters is 5 <= 4 (length is 4), so it returns "🚀🚀🚀🚀".
+		expect(truncate("🚀🚀🚀🚀", 5)).toBe("🚀🚀🚀🚀");
+		// Slicing "🚀🚀🚀🚀" at 4 characters is 4 <= 4, so it returns "🚀🚀🚀🚀".
+		expect(truncate("🚀🚀🚀🚀", 4)).toBe("🚀🚀🚀🚀");
+		// Slicing "🚀🚀🚀🚀" at 3 characters is 3 <= 3, so it returns "🚀🚀🚀".
+		expect(truncate("🚀🚀🚀🚀", 3)).toBe("🚀🚀🚀");
+		// Slicing "🚀🚀🚀🚀" at 2 characters returns "🚀🚀" because maxLength <= 3 is true.
+		expect(truncate("🚀🚀🚀🚀", 2)).toBe("🚀🚀");
+		
+		// Slicing "🚀🚀🚀🚀" at 5 with ellipsis (maxLength 5, but input is longer)
+		expect(truncate("🚀🚀🚀🚀🚀🚀", 5)).toBe("🚀🚀...");
+
+		// Family emoji "👨‍👩‍👧‍👦" is 1 grapheme.
+		expect(truncate("👨‍👩‍👧‍👦", 5)).toBe("👨‍👩‍👧‍👦"); 
+		expect(truncate("👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦", 2)).toBe("👨‍👩‍👧‍👦👨‍👩‍👧‍👦"); 
 	});
 
 	test("truncates exactly on boundaries without duplicating the final character", () => {

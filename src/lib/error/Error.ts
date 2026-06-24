@@ -27,7 +27,7 @@ export class AppError extends Error {
 			/** Original error that caused this */
 			cause?: unknown;
 			/** Hide the stack trace */
-			omitStack: boolean;
+			omitStack?: boolean;
 		},
 	) {
 		super(message, { cause: meta?.cause });

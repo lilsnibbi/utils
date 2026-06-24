@@ -5,10 +5,11 @@
  * @returns An array of chunks.
  */
 export function chunk<T = unknown>(array: T[], size: number): T[][] {
-	if (size <= 0) throw new Error("Size must be greater than 0");
+	const chunkSize = Math.floor(size);
+	if (chunkSize <= 0) throw new Error("Size must be greater than 0");
 	const chunks: T[][] = [];
-	for (let i = 0; i < array.length; i += size) {
-		chunks.push(array.slice(i, i + size));
+	for (let i = 0; i < array.length; i += chunkSize) {
+		chunks.push(array.slice(i, i + chunkSize));
 	}
 	return chunks;
 }

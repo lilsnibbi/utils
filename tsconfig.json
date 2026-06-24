@@ -22,7 +22,8 @@
 		// Some stricter flags (disabled by default)
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
-		"noPropertyAccessFromIndexSignature": true
+		"noPropertyAccessFromIndexSignature": true,
+		"types": ["bun"]
 	},
 	"include": ["./src/**/*.ts", "./tests/**/*.test.ts", "./@types/**/*.d.ts"]
 }

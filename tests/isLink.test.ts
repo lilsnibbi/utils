@@ -55,4 +55,10 @@ describe("isLink", () => {
 		expect(isLink("https://münchen.de")).toBe(true); // Unicode
 		expect(isLink("https://🚀.com")).toBe(true); // Emoji domain
 	});
+
+	test("supports options.protocols option to filter allowed schemes", () => {
+		expect(isLink("https://google.com", { protocols: ["https"] })).toBe(true);
+		expect(isLink("http://google.com", { protocols: ["https"] })).toBe(false);
+		expect(isLink("ftp://example.com", { protocols: ["http", "https"] })).toBe(false);
+	});
 });

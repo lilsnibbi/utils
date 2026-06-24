@@ -19,17 +19,16 @@ export type DiscordCommandInteraction =
 	| ChatInputCommandInteraction
 	| ContextMenuCommandInteraction;
 
-export interface DiscordCommandMetadata extends Record<string, unknown> {}
+// biome-ignore lint/suspicious/noEmptyInterface: Extended by consumers
+export interface DiscordCommandMetadata {}
 
-type DefaultMetadata<T> = keyof T extends never
-	? { "No metadata values in types": never }
-	: T;
-
-type Metadata = DefaultMetadata<DiscordCommandMetadata>;
+type Metadata = keyof DiscordCommandMetadata extends never
+	? Record<string, unknown> | undefined
+	: DiscordCommandMetadata;
 
 /**
  * Wraps a discord.js slash or context menu command with typed `execute` and optional `autocomplete` handlers.
- * @typeParam C - The bot's `Client` type. Inferred from args[0] in `method`.
+ * @typeParam C - The bot's `Client` type.
  *
  * @example To extend the `metadata` types
  * declare module "@lilsnibbi/utils" {
@@ -49,11 +48,11 @@ export class DiscordCommand<C extends Client = Client> {
 		client: C,
 		interaction: AutocompleteInteraction,
 	) => Promise<void>;
-	public metadata: Metadata;
+	public metadata?: Metadata;
 
 	constructor(ops: {
 		data: CommandData;
-		metadata: Metadata;
+		metadata?: Metadata;
 		execute: (
 			client: C,
 			interaction: DiscordCommandInteraction,

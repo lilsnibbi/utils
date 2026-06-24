@@ -194,4 +194,16 @@ describe("main", () => {
 			);
 		});
 	});
+
+	describe("anchorDate options", () => {
+		test("predictably formats calendar-aware units using anchorDate", () => {
+			const anchor = new Date("2026-02-01T00:00:00Z");
+			// 28 days = 2419200 seconds. In Feb 2026 (non-leap year), 28 days is exactly 1 month.
+			expect(formatSeconds(2419200, { anchorDate: anchor, onlyUnits: ["mo", "d"] })).toBe("1 month");
+			
+			// In March 2026, 28 days is not a full month (requires 31 days).
+			const anchorMarch = new Date("2026-03-01T00:00:00Z");
+			expect(formatSeconds(2419200, { anchorDate: anchorMarch, onlyUnits: ["mo", "d"] })).toBe("28 days");
+		});
+	});
 });

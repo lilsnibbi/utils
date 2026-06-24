@@ -6,7 +6,11 @@
  */
 export function truncate(str: string, maxLength: number): string {
 	if (maxLength < 0) throw new Error("maxLength cannot be negative");
-	if (str.length <= maxLength) return str;
-	if (maxLength <= 3) return str.slice(0, maxLength);
-	return `${str.slice(0, maxLength - 3)}...`;
+
+	const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
+	const segments = Array.from(segmenter.segment(str), (s) => s.segment);
+
+	if (segments.length <= maxLength) return str;
+	if (maxLength <= 3) return segments.slice(0, maxLength).join("");
+	return `${segments.slice(0, maxLength - 3).join("")}...`;
 }

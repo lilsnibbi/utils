@@ -48,7 +48,7 @@ describe("AppError", () => {
 	});
 
 	test("should correctly merge meta defaults", () => {
-		const error = new AppError("Test message", "TestCode", { reason: "test" } as any);
+		const error = new AppError("Test message", "TestCode", { reason: "test" });
 		expect(error.meta?.omitStack).toBe(true);
 		expect(error.meta?.reason).toBe("test");
 	});

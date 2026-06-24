@@ -42,6 +42,7 @@ export function formatSeconds(
 		onlyUnits?: TimeUnitTypes[];
 		format?: "long" | "short";
 		rounding?: "floor" | "ceil" | "round";
+		anchorDate?: Date;
 		customFormatter?: (
 			unit: TimeUnitTypes,
 			value: number,
@@ -72,7 +73,7 @@ export function formatSeconds(
 	let totalMs = Math.round(absSeconds * 1000);
 
 	const diff: Partial<Record<TimeUnitTypes, number>> = {};
-	const now = new Date();
+	const now = options.anchorDate ?? new Date();
 	const end = new Date(now.getTime() + totalMs);
 
 	if (unitsToDisplay.includes("y")) {

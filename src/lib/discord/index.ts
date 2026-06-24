@@ -1,3 +1,3 @@
-export * from "./commandBuilder";
+export * from "./command";
 export * from "./paginationBuilder";
-export * from "./eventBuilder";
+export * from "./event";

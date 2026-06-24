@@ -85,7 +85,7 @@ export class LoggerModule {
 		return `${this.formatter.format(d)}.${d.getMilliseconds().toString().padStart(3, "0")}`;
 	}
 
-	private formatMessage(level: LogLevel, message: unknown): Error | string {
+	private formatMessage(level: LogLevel, message: unknown): string {
 		const timestamp = this.includeTimestamps
 			? `${gray(`[${this.getTimestamp()}]`)} `
 			: "";
@@ -94,11 +94,11 @@ export class LoggerModule {
 
 		if (message instanceof Error) {
 			const sanitized = this.sanitizeStack(message.stack || "");
-			message.message = `${prefix} ${message.message}`;
+			const formattedMessage = `${prefix} ${message.message}`;
 			if (sanitized) {
-				message.stack = `${message.message}\n${sanitized}`;
+				return `${formattedMessage}\n${sanitized}`;
 			}
-			return message;
+			return formattedMessage;
 		}
 
 		if (typeof message === "string") {
@@ -145,7 +145,7 @@ export class LoggerModule {
 		if (this.levelPriority[level] < this.levelPriority[this.level]) return;
 		const msg = this.formatMessage(level, message);
 		if (raw) {
-			return msg instanceof Error ? msg.stack || msg.message : msg;
+			return msg;
 		}
 		void console[this.logMethods[level]](msg);
 	}
