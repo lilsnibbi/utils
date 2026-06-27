@@ -4,10 +4,11 @@
  * @param maxLength - The maximum length of the string.
  * @returns The truncated string.
  */
+const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
+
 export function truncate(str: string, maxLength: number): string {
 	if (maxLength < 0) throw new Error("maxLength cannot be negative");
 
-	const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
 	const segments = Array.from(segmenter.segment(str), (s) => s.segment);
 
 	if (segments.length <= maxLength) return str;
