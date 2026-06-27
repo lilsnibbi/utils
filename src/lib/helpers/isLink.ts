@@ -4,18 +4,18 @@
  * @returns True if the string is a valid URL.
  */
 export interface IsLinkOptions {
-	/** Allowed protocols. Defaults to allowing any valid protocol (e.g. ftp, mailto, file, etc.). */
+	/** Allowed protocols. Defaults to `['http', 'https']`. */
 	protocols?: string[];
 }
+
+const DEFAULT_PROTOCOLS = ["http", "https"];
 
 export function isLink(str: string, options?: IsLinkOptions): boolean {
 	try {
 		const url = new URL(str);
-		if (options?.protocols) {
-			const protocol = url.protocol.replace(/:$/, "");
-			return options.protocols.includes(protocol);
-		}
-		return true;
+		const protocols = options?.protocols ?? DEFAULT_PROTOCOLS;
+		const protocol = url.protocol.replace(/:$/, "");
+		return protocols.includes(protocol);
 	} catch {
 		return false;
 	}
