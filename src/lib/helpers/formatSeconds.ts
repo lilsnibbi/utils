@@ -25,6 +25,11 @@ const ALL_UNITS_ORDER: TimeUnitTypes[] = [
 	"ms",
 ];
 
+const LIST_FORMATTER = new Intl.ListFormat("en-US", {
+	style: "long",
+	type: "conjunction",
+});
+
 /**
  * Calendar-aware duration formatter. Converts raw seconds into a human-readable string.
  * @param seconds - The duration in seconds to format.
@@ -160,11 +165,7 @@ export function formatSeconds(
 	let result: string;
 	if (format === "long" && parts.length > 1) {
 		try {
-			const formatter = new Intl.ListFormat("en-US", {
-				style: "long",
-				type: "conjunction",
-			});
-			result = formatter.format(parts);
+			result = LIST_FORMATTER.format(parts);
 		} catch {
 			const last = parts.pop();
 			result = `${parts.join(", ")} and ${last}`;
