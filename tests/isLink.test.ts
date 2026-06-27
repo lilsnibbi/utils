@@ -19,20 +19,21 @@ describe("isLink", () => {
 		expect(isLink("https://api.github.com/users/oven-sh/repos?sort=updated&direction=desc#readme")).toBe(true);
 	});
 
-	test("returns true for non-HTTP protocols", () => {
-		expect(isLink("ftp://example.com/file.zip")).toBe(true);
-		expect(isLink("wss://echo.websocket.org")).toBe(true);
-		expect(isLink("mailto:test@example.com")).toBe(true);
-		expect(isLink("file:///C:/Users/test/file.txt")).toBe(true);
-		expect(isLink("data:text/plain;base64,SGVsbG8=")).toBe(true);
-		expect(isLink("javascript:alert('xss')")).toBe(true); // Valid URL structurally
+	test("returns false for non-HTTP protocols by default", () => {
+		expect(isLink("ftp://example.com/file.zip")).toBe(false);
+		expect(isLink("wss://echo.websocket.org")).toBe(false);
+		expect(isLink("mailto:test@example.com")).toBe(false);
+		expect(isLink("file:///C:/Users/test/file.txt")).toBe(false);
+		expect(isLink("data:text/plain;base64,SGVsbG8=")).toBe(false);
+		expect(isLink("javascript:alert('xss')")).toBe(false);
 	});
 
 	test("returns false for domain names without protocols", () => {
 		expect(isLink("google.com")).toBe(false);
 		expect(isLink("www.google.com")).toBe(false);
 		// 'localhost:3000' is technically a valid URI because 'localhost:' is treated as the scheme
-		expect(isLink("localhost:3000")).toBe(true); 
+		// but it's not a safe default protocol
+		expect(isLink("localhost:3000")).toBe(false);
 	});
 
 	test("returns false for invalid or malformed strings", () => {
@@ -60,5 +61,7 @@ describe("isLink", () => {
 		expect(isLink("https://google.com", { protocols: ["https"] })).toBe(true);
 		expect(isLink("http://google.com", { protocols: ["https"] })).toBe(false);
 		expect(isLink("ftp://example.com", { protocols: ["http", "https"] })).toBe(false);
+		expect(isLink("ftp://example.com", { protocols: ["ftp"] })).toBe(true);
+		expect(isLink("mailto:test@example.com", { protocols: ["mailto"] })).toBe(true);
 	});
 });
