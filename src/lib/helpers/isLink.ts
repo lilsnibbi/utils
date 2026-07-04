@@ -11,12 +11,15 @@ export interface IsLinkOptions {
 const DEFAULT_PROTOCOLS = ["http", "https"];
 
 export function isLink(str: string, options?: IsLinkOptions): boolean {
-	try {
-		const url = new URL(str);
-		const protocols = options?.protocols ?? DEFAULT_PROTOCOLS;
-		const protocol = url.protocol.replace(/:$/, "");
-		return protocols.includes(protocol);
-	} catch {
+	if (!URL.canParse(str)) {
 		return false;
 	}
+
+	const protocols = options?.protocols ?? DEFAULT_PROTOCOLS;
+	str = str.trimStart();
+	const colonIdx = str.indexOf(":");
+	if (colonIdx === -1) return false;
+
+	const protocol = str.slice(0, colonIdx).toLowerCase();
+	return protocols.includes(protocol);
 }
