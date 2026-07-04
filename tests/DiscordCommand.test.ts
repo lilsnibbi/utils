@@ -27,4 +27,56 @@ describe("DiscordCommand", () => {
 
 		expect(command.metadata).toBeUndefined();
 	});
+
+	test("should bubble up errors thrown in execute", async () => {
+		const data = new SlashCommandBuilder().setName("test").setDescription("test cmd");
+		const execute = async (_client: Client, _interaction: any) => {
+			throw new Error("Execute error");
+		};
+		const command = new DiscordCommand({
+			data,
+			execute
+		});
+
+		await expect(command.execute({} as Client, {} as any)).rejects.toThrow("Execute error");
+	});
+
+	test("should allow omitting optional autocomplete", () => {
+		const data = new SlashCommandBuilder().setName("test").setDescription("test cmd");
+		const execute = async (_client: Client, _interaction: any) => {};
+		const command = new DiscordCommand({
+			data,
+			execute
+		});
+
+		expect(command.autocomplete).toBeUndefined();
+	});
+
+	test("should instantiate a command with autocomplete", () => {
+		const data = new SlashCommandBuilder().setName("test").setDescription("test cmd");
+		const execute = async (_client: Client, _interaction: any) => {};
+		const autocomplete = async (_client: Client, _interaction: any) => {};
+		const command = new DiscordCommand({
+			data,
+			execute,
+			autocomplete
+		});
+
+		expect(command.autocomplete).toBe(autocomplete);
+	});
+
+	test("should bubble up errors thrown in autocomplete", async () => {
+		const data = new SlashCommandBuilder().setName("test").setDescription("test cmd");
+		const execute = async (_client: Client, _interaction: any) => {};
+		const autocomplete = async (_client: Client, _interaction: any) => {
+			throw new Error("Autocomplete error");
+		};
+		const command = new DiscordCommand({
+			data,
+			execute,
+			autocomplete
+		});
+
+		await expect(command.autocomplete?.({} as Client, {} as any)).rejects.toThrow("Autocomplete error");
+	});
 });
