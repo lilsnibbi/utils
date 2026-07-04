@@ -461,64 +461,67 @@ export class PaginationBuilder {
 			.setFooter({ text: `Page ${page + 1}/${this.totalPages}` });
 	}
 
+	private createButton(
+		idSuffix: string,
+		defaultLabel: string,
+		config: PaginationButtonConfig | undefined,
+		disabled: boolean,
+	): ButtonBuilder {
+		const btn = new ButtonBuilder()
+			.setCustomId(`${this.prefix}${idSuffix}`)
+			.setLabel(config?.label ?? defaultLabel)
+			.setStyle(config?.style ?? ButtonStyle.Secondary)
+			.setDisabled(disabled);
+		if (config?.emoji) btn.setEmoji(config.emoji);
+		return btn;
+	}
+
 	private getPaginationRow(): ActionRowBuilder<ButtonBuilder> {
 		const row = new ActionRowBuilder<ButtonBuilder>();
 
 		if (this.showSkipButtons) {
-			const firstBtn = new ButtonBuilder()
-				.setCustomId(`${this.prefix}first`)
-				.setLabel(this.buttonOptions?.first?.label ?? "<<")
-				.setStyle(this.buttonOptions?.first?.style ?? ButtonStyle.Secondary)
-				.setDisabled(this.ended || this.currentIndex === 0);
-			if (this.buttonOptions?.first?.emoji)
-				firstBtn.setEmoji(this.buttonOptions.first.emoji);
-			row.addComponents(firstBtn);
+			row.addComponents(
+				this.createButton(
+					"first",
+					"<<",
+					this.buttonOptions?.first,
+					this.ended || this.currentIndex === 0,
+				),
+			);
 		}
 
-		const backBtn = new ButtonBuilder()
-			.setCustomId(`${this.prefix}back`)
-			.setLabel(this.buttonOptions?.back?.label ?? "<")
-			.setStyle(this.buttonOptions?.back?.style ?? ButtonStyle.Secondary)
-			.setDisabled(this.ended || this.currentIndex === 0);
-		if (this.buttonOptions?.back?.emoji)
-			backBtn.setEmoji(this.buttonOptions.back.emoji);
-
-		const infoBtn = new ButtonBuilder()
-			.setCustomId(`${this.prefix}info`)
-			.setLabel(
-				this.buttonOptions?.jump?.label ??
-					`${Math.floor(this.currentIndex / this.entriesPerPage) + 1}/${this.totalPages}`,
-			)
-			.setStyle(this.buttonOptions?.jump?.style ?? ButtonStyle.Secondary)
-			.setDisabled(this.ended || this.totalPages === 1);
-		if (this.buttonOptions?.jump?.emoji)
-			infoBtn.setEmoji(this.buttonOptions.jump.emoji);
-
-		const nextBtn = new ButtonBuilder()
-			.setCustomId(`${this.prefix}forward`)
-			.setLabel(this.buttonOptions?.next?.label ?? ">")
-			.setStyle(this.buttonOptions?.next?.style ?? ButtonStyle.Secondary)
-			.setDisabled(
+		row.addComponents(
+			this.createButton(
+				"back",
+				"<",
+				this.buttonOptions?.back,
+				this.ended || this.currentIndex === 0,
+			),
+			this.createButton(
+				"info",
+				`${Math.floor(this.currentIndex / this.entriesPerPage) + 1}/${this.totalPages}`,
+				this.buttonOptions?.jump,
+				this.ended || this.totalPages === 1,
+			),
+			this.createButton(
+				"forward",
+				">",
+				this.buttonOptions?.next,
 				this.ended ||
 					this.currentIndex + this.entriesPerPage >= this.list.length,
-			);
-		if (this.buttonOptions?.next?.emoji)
-			nextBtn.setEmoji(this.buttonOptions.next.emoji);
-
-		row.addComponents(backBtn, infoBtn, nextBtn);
+			),
+		);
 
 		if (this.showSkipButtons) {
-			const lastBtn = new ButtonBuilder()
-				.setCustomId(`${this.prefix}last`)
-				.setLabel(this.buttonOptions?.last?.label ?? ">>")
-				.setStyle(this.buttonOptions?.last?.style ?? ButtonStyle.Secondary)
-				.setDisabled(
+			row.addComponents(
+				this.createButton(
+					"last",
+					">>",
+					this.buttonOptions?.last,
 					this.ended ||
 						this.currentIndex + this.entriesPerPage >= this.list.length,
-				);
-			if (this.buttonOptions?.last?.emoji)
-				lastBtn.setEmoji(this.buttonOptions.last.emoji);
-			row.addComponents(lastBtn);
+				),
+			);
 		}
 
 		return row;
