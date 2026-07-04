@@ -328,53 +328,48 @@ export class PaginationBuilder {
 			);
 
 		const allowedMentions = { parse: [] as const, repliedUser: false };
+		const isEphemeral = !this.isMessage && this.ephemeral;
+
+		const payload =
+			this.mode === "container"
+				? {
+						components: [
+							new ContainerBuilder().addTextDisplayComponents(
+								new TextDisplayBuilder().setContent("No data to show"),
+							),
+						],
+						flags: isEphemeral
+							? (["Ephemeral", "IsComponentsV2"] as const)
+							: (["IsComponentsV2"] as const),
+						allowedMentions,
+					}
+				: {
+						embeds: [
+							new EmbedBuilder(this.embedTemplate?.toJSON()).setDescription(
+								"No data to show",
+							),
+						],
+						...(isEphemeral && { flags: ["Ephemeral"] as const }),
+						allowedMentions,
+					};
 
 		if (this.isMessage) {
-			const payload =
-				this.mode === "container"
-					? {
-							components: [
-								new ContainerBuilder().addTextDisplayComponents(
-									new TextDisplayBuilder().setContent("No data to show"),
-								),
-							],
-							flags: ["IsComponentsV2"] as const,
-							allowedMentions,
-						}
-					: {
-							embeds: [
-								new EmbedBuilder(this.embedTemplate?.toJSON()).setDescription(
-									"No data to show",
-								),
-							],
-							allowedMentions,
-						};
-			await (target as Message).reply(payload).catch(() => {});
+			await (target as Message)
+				.reply(
+					payload as
+						| string
+						| import("discord.js").MessagePayload
+						| import("discord.js").MessageReplyOptions,
+				)
+				.catch(() => {});
 		} else {
-			const payload =
-				this.mode === "container"
-					? {
-							components: [
-								new ContainerBuilder().addTextDisplayComponents(
-									new TextDisplayBuilder().setContent("No data to show"),
-								),
-							],
-							flags: this.ephemeral
-								? (["Ephemeral", "IsComponentsV2"] as const)
-								: (["IsComponentsV2"] as const),
-							allowedMentions,
-						}
-					: {
-							embeds: [
-								new EmbedBuilder(this.embedTemplate?.toJSON()).setDescription(
-									"No data to show",
-								),
-							],
-							flags: this.ephemeral ? (["Ephemeral"] as const) : ([] as const),
-							allowedMentions,
-						};
 			await (target as ButtonInteraction | ChatInputCommandInteraction)
-				.reply(payload)
+				.reply(
+					payload as
+						| string
+						| import("discord.js").MessagePayload
+						| import("discord.js").InteractionReplyOptions,
+				)
 				.catch(() => {});
 		}
 	}
