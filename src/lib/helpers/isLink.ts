@@ -11,15 +11,15 @@ export interface IsLinkOptions {
 const DEFAULT_PROTOCOLS = ["http", "https"];
 
 export function isLink(str: string, options?: IsLinkOptions): boolean {
-	if (!URL.canParse(str)) {
-		return false;
-	}
-
 	const protocols = options?.protocols ?? DEFAULT_PROTOCOLS;
+
+	// Fast path: avoid expensive URL parsing if the string lacks a valid protocol prefix.
 	str = str.trimStart();
 	const colonIdx = str.indexOf(":");
 	if (colonIdx === -1) return false;
 
 	const protocol = str.slice(0, colonIdx).toLowerCase();
-	return protocols.includes(protocol);
+	if (!protocols.includes(protocol)) return false;
+
+	return URL.canParse(str);
 }
