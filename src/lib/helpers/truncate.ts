@@ -11,13 +11,23 @@ export function truncate(str: string, maxLength: number): string {
 
 	if (str.length <= maxLength) return str;
 
-	const segments: string[] = [];
-	for (const { segment } of segmenter.segment(str)) {
-		segments.push(segment);
-		if (segments.length > maxLength) break;
+	const iterator = segmenter.segment(str)[Symbol.iterator]();
+	let count = 0;
+	let truncatedStr = "";
+	const limit = maxLength <= 3 ? maxLength : maxLength - 3;
+
+	while (true) {
+		const next = iterator.next();
+		if (next.done) return str;
+
+		count++;
+		if (count <= limit) {
+			truncatedStr += next.value.segment;
+		}
+
+		if (count > maxLength) break;
 	}
 
-	if (segments.length <= maxLength) return str;
-	if (maxLength <= 3) return segments.slice(0, maxLength).join("");
-	return `${segments.slice(0, maxLength - 3).join("")}...`;
+	if (maxLength <= 3) return truncatedStr;
+	return `${truncatedStr}...`;
 }
