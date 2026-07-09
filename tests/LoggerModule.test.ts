@@ -1,15 +1,15 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: test spies */
 import { afterEach, beforeEach, describe, expect, test, spyOn } from "bun:test";
-import { LoggerModule } from "../src";
+import { createLogger, type Logger } from "../src";
 
-let logger: LoggerModule;
+let logger: Logger;
 let logSpy: any;
 let warnSpy: any;
 let errorSpy: any;
 let debugSpy: any;
 
 beforeEach(() => {
-	logger = new LoggerModule({
+	logger = createLogger({
 		name: "tester",
 		timeformat: "en-AU"
 	});

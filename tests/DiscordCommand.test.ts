@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { Client, SlashCommandBuilder } from "discord.js";
-import { DiscordCommand } from "../src";
+import { defineCommand } from "../src";
 
-describe("DiscordCommand", () => {
+describe("defineCommand", () => {
 	test("should instantiate a command with data, execute and metadata", () => {
 		const data = new SlashCommandBuilder().setName("test").setDescription("test cmd");
 		const execute = async (_client: Client, _interaction: any) => {};
-		const command = new DiscordCommand({
+		const command = defineCommand({
 			data,
 			execute,
 			metadata: { cooldown: 5 }
@@ -20,7 +20,7 @@ describe("DiscordCommand", () => {
 	test("should allow omitting optional metadata", () => {
 		const data = new SlashCommandBuilder().setName("test").setDescription("test cmd");
 		const execute = async (_client: Client, _interaction: any) => {};
-		const command = new DiscordCommand({
+		const command = defineCommand({
 			data,
 			execute
 		});
@@ -33,7 +33,7 @@ describe("DiscordCommand", () => {
 		const execute = async (_client: Client, _interaction: any) => {
 			throw new Error("Execute error");
 		};
-		const command = new DiscordCommand({
+		const command = defineCommand({
 			data,
 			execute
 		});
@@ -44,7 +44,7 @@ describe("DiscordCommand", () => {
 	test("should allow omitting optional autocomplete", () => {
 		const data = new SlashCommandBuilder().setName("test").setDescription("test cmd");
 		const execute = async (_client: Client, _interaction: any) => {};
-		const command = new DiscordCommand({
+		const command = defineCommand({
 			data,
 			execute
 		});
@@ -56,7 +56,7 @@ describe("DiscordCommand", () => {
 		const data = new SlashCommandBuilder().setName("test").setDescription("test cmd");
 		const execute = async (_client: Client, _interaction: any) => {};
 		const autocomplete = async (_client: Client, _interaction: any) => {};
-		const command = new DiscordCommand({
+		const command = defineCommand({
 			data,
 			execute,
 			autocomplete
@@ -71,7 +71,7 @@ describe("DiscordCommand", () => {
 		const autocomplete = async (_client: Client, _interaction: any) => {
 			throw new Error("Autocomplete error");
 		};
-		const command = new DiscordCommand({
+		const command = defineCommand({
 			data,
 			execute,
 			autocomplete

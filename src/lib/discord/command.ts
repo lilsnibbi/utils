@@ -26,45 +26,23 @@ type Metadata = keyof DiscordCommandMetadata extends never
 	? Record<string, unknown> | undefined
 	: DiscordCommandMetadata;
 
-/**
- * Wraps a discord.js slash or context menu command with typed `execute` and optional `autocomplete` handlers.
- * @typeParam C - The bot's `Client` type.
- *
- * @example To extend the `metadata` types
- * declare module "@lilsnibbi/utils" {
- *     interface DiscordCommandMetadata {
- *         cooldown?: number;
- *         category?: string;
- *     }
- * }
- */
-export class DiscordCommand<C extends Client = Client> {
-	public readonly data: CommandData;
-	public readonly execute: (
-		client: C,
-		interaction: DiscordCommandInteraction,
-	) => Promise<void>;
-	public readonly autocomplete?: (
+export interface DefinedCommand<C extends Client = Client> {
+	data: CommandData;
+	execute: (client: C, interaction: DiscordCommandInteraction) => Promise<void>;
+	autocomplete?: (
 		client: C,
 		interaction: AutocompleteInteraction,
 	) => Promise<void>;
-	public metadata?: Metadata;
+	metadata?: Metadata;
+}
 
-	constructor(ops: {
-		data: CommandData;
-		metadata?: Metadata;
-		execute: (
-			client: C,
-			interaction: DiscordCommandInteraction,
-		) => Promise<void>;
-		autocomplete?: (
-			client: C,
-			interaction: AutocompleteInteraction,
-		) => Promise<void>;
-	}) {
-		this.data = ops.data;
-		this.metadata = ops.metadata;
-		this.execute = ops.execute;
-		this.autocomplete = ops.autocomplete;
-	}
+export function defineCommand<C extends Client = Client>(
+	ops: DefinedCommand<C>,
+): DefinedCommand<C> {
+	return {
+		data: ops.data,
+		metadata: ops.metadata,
+		execute: ops.execute,
+		autocomplete: ops.autocomplete,
+	};
 }

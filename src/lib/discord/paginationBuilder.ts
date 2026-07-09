@@ -588,10 +588,10 @@ export class PaginationBuilder {
 		try {
 			const payload = this.buildPayload();
 
-			if (this.replyMessage && (!this.interaction || !this.ephemeral)) {
-				await this.replyMessage.edit(payload);
-			} else if (this.interaction) {
+			if (this.interaction) {
 				await this.interaction.editReply(payload);
+			} else if (this.replyMessage) {
+				await this.replyMessage.edit(payload);
 			}
 		} catch (error) {
 			const e = error as Error;

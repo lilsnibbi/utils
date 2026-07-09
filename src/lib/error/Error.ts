@@ -39,7 +39,5 @@ export class AppError extends Error {
 		};
 
 		if (this.meta.omitStack) this.stack = undefined;
-
-		Object.setPrototypeOf(this, AppError.prototype);
 	}
 }
