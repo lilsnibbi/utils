@@ -16,7 +16,11 @@ describe("isLink", () => {
 	});
 
 	test("returns true for URLs with paths, queries, and fragments", () => {
-		expect(isLink("https://api.github.com/users/oven-sh/repos?sort=updated&direction=desc#readme")).toBe(true);
+		expect(
+			isLink(
+				"https://api.github.com/users/oven-sh/repos?sort=updated&direction=desc#readme",
+			),
+		).toBe(true);
 	});
 
 	test("returns false for non-HTTP protocols by default", () => {
@@ -60,8 +64,18 @@ describe("isLink", () => {
 	test("supports options.protocols option to filter allowed schemes", () => {
 		expect(isLink("https://google.com", { protocols: ["https"] })).toBe(true);
 		expect(isLink("http://google.com", { protocols: ["https"] })).toBe(false);
-		expect(isLink("ftp://example.com", { protocols: ["http", "https"] })).toBe(false);
+		expect(isLink("ftp://example.com", { protocols: ["http", "https"] })).toBe(
+			false,
+		);
 		expect(isLink("ftp://example.com", { protocols: ["ftp"] })).toBe(true);
-		expect(isLink("mailto:test@example.com", { protocols: ["mailto"] })).toBe(true);
+		expect(isLink("mailto:test@example.com", { protocols: ["mailto"] })).toBe(
+			true,
+		);
+	});
+
+	test("normalizes configured protocol casing and trailing colons", () => {
+		expect(isLink("HTTPS://example.com", { protocols: ["https:"] })).toBe(true);
+		expect(isLink("https://example.com", { protocols: ["HTTPS"] })).toBe(true);
+		expect(isLink("https://example.com", { protocols: [] })).toBe(false);
 	});
 });

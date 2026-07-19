@@ -25,5 +25,5 @@
 		"noPropertyAccessFromIndexSignature": true,
 		"types": ["bun"]
 	},
-	"include": ["./src/**/*.ts", "./tests/**/*.test.ts", "./@types/**/*.d.ts"]
+	"include": ["./src/**/*.ts", "./tests/**/*.test.ts", "./benchmarks/**/*.ts"]
 }

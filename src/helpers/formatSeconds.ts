@@ -1,9 +1,26 @@
-type TimeUnitTypes = "y" | "mo" | "w" | "d" | "h" | "m" | "s" | "ms";
+/** A time unit accepted by {@link formatSeconds}. */
+export type TimeUnit = "y" | "mo" | "w" | "d" | "h" | "m" | "s" | "ms";
 
-const UNITS: Record<
-	TimeUnitTypes,
-	{ label: string; short: string; ms: number }
-> = {
+/** Rounding strategy applied to the smallest displayed unit. */
+export type DurationRounding = "floor" | "ceil" | "round";
+
+/** Options for {@link formatSeconds}. */
+export interface FormatSecondsOptions {
+	/** Includes selected units whose value is zero. Defaults to `false`. */
+	includeZeroUnits?: boolean;
+	/** Restricts output to these units, ordered from largest to smallest. */
+	onlyUnits?: readonly TimeUnit[];
+	/** Uses full labels or abbreviations. Defaults to `"long"`. */
+	format?: "long" | "short";
+	/** Rounds the smallest displayed unit. Defaults to `"round"`. */
+	rounding?: DurationRounding;
+	/** Date from which calendar-aware years and months are calculated. */
+	anchorDate?: Date;
+	/** Overrides the rendering of each included unit. */
+	customFormatter?: (unit: TimeUnit, value: number, label: string) => string;
+}
+
+const UNITS: Record<TimeUnit, { label: string; short: string; ms: number }> = {
 	y: { label: "year", short: "y", ms: 31536000000 },
 	mo: { label: "month", short: "mo", ms: 2628000000 },
 	w: { label: "week", short: "w", ms: 604800000 },
@@ -14,7 +31,7 @@ const UNITS: Record<
 	ms: { label: "millisecond", short: "ms", ms: 1 },
 };
 
-const ALL_UNITS_ORDER: TimeUnitTypes[] = [
+const ALL_UNITS_ORDER: readonly TimeUnit[] = [
 	"y",
 	"mo",
 	"w",
@@ -31,29 +48,21 @@ const LIST_FORMATTER = new Intl.ListFormat("en-US", {
 });
 
 /**
- * Calendar-aware duration formatter. Converts raw seconds into a human-readable string.
+ * Converts a duration in seconds into a human-readable English string.
+ *
+ * Years and months are calendar-aware when a smaller unit is also displayed.
+ * When either is the smallest displayed unit, a 365-day year and average
+ * 30.4167-day month are used for rounding.
+ *
  * @param seconds - The duration in seconds to format.
  * @param options - Formatting options.
- * @param options.format - `"long"` (default) for full words, `"short"` for abbreviated units.
- * @param options.onlyUnits - Restrict output to specific time units.
- * @param options.includeZeroUnits - Include units with a value of zero.
- * @param options.customFormatter - Override per-unit rendering.
- * @returns A formatted duration string (e.g. `"2 hours and 30 minutes"` or `"2h 30m"`).
+ * @returns A formatted duration such as `"2 hours and 30 minutes"` or `"2h 30m"`.
+ * @throws {RangeError} If `anchorDate` is invalid or the duration exceeds the
+ * supported JavaScript date range.
  */
 export function formatSeconds(
 	seconds: number,
-	options: {
-		includeZeroUnits?: boolean;
-		onlyUnits?: TimeUnitTypes[];
-		format?: "long" | "short";
-		rounding?: "floor" | "ceil" | "round";
-		anchorDate?: Date;
-		customFormatter?: (
-			unit: TimeUnitTypes,
-			value: number,
-			label: string,
-		) => string;
-	} = {},
+	options: FormatSecondsOptions = {},
 ): string {
 	const {
 		includeZeroUnits = false,
@@ -77,9 +86,15 @@ export function formatSeconds(
 	// If we are rounding to a unit larger than ms, we should do it at that level
 	let totalMs = Math.round(absSeconds * 1000);
 
-	const diff: Partial<Record<TimeUnitTypes, number>> = {};
+	const diff: Partial<Record<TimeUnit, number>> = {};
 	const now = options.anchorDate ?? new Date();
+	if (Number.isNaN(now.getTime())) {
+		throw new RangeError("anchorDate must be a valid Date");
+	}
 	const end = new Date(now.getTime() + totalMs);
+	if (Number.isNaN(end.getTime())) {
+		throw new RangeError("seconds exceed the supported Date range");
+	}
 
 	if (unitsToDisplay.includes("y")) {
 		let y = end.getFullYear() - now.getFullYear();

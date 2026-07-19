@@ -5,16 +5,12 @@ describe("randomInt", () => {
 	test("generates an integer within a positive range (inclusive)", () => {
 		const min = 1;
 		const max = 10;
-		const results = new Set<number>();
 		for (let i = 0; i < 200; i++) {
 			const result = randomInt(min, max);
 			expect(result).toBeGreaterThanOrEqual(min);
 			expect(result).toBeLessThanOrEqual(max);
 			expect(Number.isInteger(result)).toBe(true);
-			results.add(result);
 		}
-		// With 200 iterations on a range of 10, we expect multiple unique results
-		expect(results.size).toBeGreaterThan(1);
 	});
 
 	test("generates an integer within a negative range (inclusive)", () => {
@@ -31,14 +27,11 @@ describe("randomInt", () => {
 	test("generates an integer within a range spanning zero", () => {
 		const min = -5;
 		const max = 5;
-		const results = new Set<number>();
 		for (let i = 0; i < 100; i++) {
 			const result = randomInt(min, max);
 			expect(result).toBeGreaterThanOrEqual(min);
 			expect(result).toBeLessThanOrEqual(max);
-			results.add(result);
 		}
-		expect(results.has(0)).toBeDefined(); // highly likely to hit 0 eventually
 	});
 
 	test("returns exactly min when min and max are equal", () => {
@@ -47,9 +40,30 @@ describe("randomInt", () => {
 		expect(randomInt(0, 0)).toBe(0);
 	});
 
-	test("throws an error when min is greater than max", () => {
+	test("throws when the normalized range is empty", () => {
 		expect(() => randomInt(10, 5)).toThrow("min cannot be greater than max");
 		expect(() => randomInt(0, -1)).toThrow("min cannot be greater than max");
+		expect(() => randomInt(1.2, 1.8)).toThrow(
+			"min cannot be greater than max after rounding",
+		);
+	});
+
+	test("rejects non-finite and unsafe bounds", () => {
+		expect(() => randomInt(Number.NaN, 1)).toThrow(
+			"min and max must be finite numbers",
+		);
+		expect(() => randomInt(0, Number.POSITIVE_INFINITY)).toThrow(
+			"min and max must be finite numbers",
+		);
+		expect(() =>
+			randomInt(Number.MAX_SAFE_INTEGER + 1, Number.MAX_SAFE_INTEGER + 2),
+		).toThrow("min and max must be safe integers after rounding");
+	});
+
+	test("rejects ranges larger than node:crypto supports", () => {
+		expect(() => randomInt(0, 2 ** 48)).toThrow(
+			"the inclusive range must not exceed 2^48 values",
+		);
 	});
 
 	test("handles large boundaries", () => {

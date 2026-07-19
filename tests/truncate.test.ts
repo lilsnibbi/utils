@@ -18,8 +18,17 @@ describe("truncate", () => {
 	});
 
 	test("throws an error if maxLength is negative", () => {
-		expect(() => truncate("Hello", -1)).toThrow("maxLength cannot be negative");
-		expect(() => truncate("Hello", -10)).toThrow("maxLength cannot be negative");
+		expect(() => truncate("Hello", -1)).toThrow(
+			"maxLength must be a non-negative finite number",
+		);
+		expect(() => truncate("Hello", Number.NaN)).toThrow(
+			"maxLength must be a non-negative finite number",
+		);
+	});
+
+	test("floors fractional limits and permits an infinite limit", () => {
+		expect(truncate("Hello", 2.9)).toBe("He");
+		expect(truncate("Hello", Number.POSITIVE_INFINITY)).toBe("Hello");
 	});
 
 	test("handles extremely short max lengths properly (<= 3)", () => {
@@ -45,13 +54,13 @@ describe("truncate", () => {
 		expect(truncate("🚀🚀🚀🚀", 3)).toBe("🚀🚀🚀");
 		// Slicing "🚀🚀🚀🚀" at 2 characters returns "🚀🚀" because maxLength <= 3 is true.
 		expect(truncate("🚀🚀🚀🚀", 2)).toBe("🚀🚀");
-		
+
 		// Slicing "🚀🚀🚀🚀" at 5 with ellipsis (maxLength 5, but input is longer)
 		expect(truncate("🚀🚀🚀🚀🚀🚀", 5)).toBe("🚀🚀...");
 
 		// Family emoji "👨‍👩‍👧‍👦" is 1 grapheme.
-		expect(truncate("👨‍👩‍👧‍👦", 5)).toBe("👨‍👩‍👧‍👦"); 
-		expect(truncate("👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦", 2)).toBe("👨‍👩‍👧‍👦👨‍👩‍👧‍👦"); 
+		expect(truncate("👨‍👩‍👧‍👦", 5)).toBe("👨‍👩‍👧‍👦");
+		expect(truncate("👨‍👩‍👧‍👦👨‍👩‍👧‍👦👨‍👩‍👧‍👦", 2)).toBe("👨‍👩‍👧‍👦👨‍👩‍👧‍👦");
 	});
 
 	test("truncates exactly on boundaries without duplicating the final character", () => {

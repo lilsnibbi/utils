@@ -1,5 +1,5 @@
 import { bench, run } from "mitata";
-import { isLink } from "./isLink";
+import { isLink } from "../src/helpers/isLink";
 
 // Create mixed data to benchmark
 const inputs = [
@@ -27,7 +27,7 @@ const inputs = [
 
 bench("isLink", () => {
 	for (let i = 0; i < inputs.length; i++) {
-		isLink(inputs[i]);
+		isLink(inputs[i] ?? "");
 	}
 });
 

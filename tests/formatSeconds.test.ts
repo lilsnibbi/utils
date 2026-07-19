@@ -17,7 +17,9 @@ describe("main", () => {
 
 		test("joins multiple parts with commas and trailing 'and' (Oxford comma)", () => {
 			expect(formatSeconds(3661)).toBe("1 hour, 1 minute, and 1 second");
-			expect(formatSeconds(90061)).toBe("1 day, 1 hour, 1 minute, and 1 second");
+			expect(formatSeconds(90061)).toBe(
+				"1 day, 1 hour, 1 minute, and 1 second",
+			);
 		});
 	});
 
@@ -59,17 +61,27 @@ describe("main", () => {
 
 	describe("rounding options", () => {
 		test("floor", () => {
-			expect(formatSeconds(1.9, { rounding: "floor" })).toBe("1 second and 900 milliseconds");
-			expect(formatSeconds(1.999, { rounding: "floor", onlyUnits: ["s"] })).toBe("1 second");
+			expect(formatSeconds(1.9, { rounding: "floor" })).toBe(
+				"1 second and 900 milliseconds",
+			);
+			expect(
+				formatSeconds(1.999, { rounding: "floor", onlyUnits: ["s"] }),
+			).toBe("1 second");
 		});
 
 		test("ceil", () => {
-			expect(formatSeconds(1.1, { rounding: "ceil", onlyUnits: ["s"] })).toBe("2 seconds");
+			expect(formatSeconds(1.1, { rounding: "ceil", onlyUnits: ["s"] })).toBe(
+				"2 seconds",
+			);
 		});
 
 		test("round (default)", () => {
-			expect(formatSeconds(1.5, { rounding: "round", onlyUnits: ["s"] })).toBe("2 seconds");
-			expect(formatSeconds(1.4, { rounding: "round", onlyUnits: ["s"] })).toBe("1 second");
+			expect(formatSeconds(1.5, { rounding: "round", onlyUnits: ["s"] })).toBe(
+				"2 seconds",
+			);
+			expect(formatSeconds(1.4, { rounding: "round", onlyUnits: ["s"] })).toBe(
+				"1 second",
+			);
 		});
 	});
 
@@ -99,9 +111,9 @@ describe("main", () => {
 			expect(formatSeconds(sevenDays, { onlyUnits: ["w", "d"] })).toBe(
 				"1 week",
 			);
-			expect(
-				formatSeconds(sevenDays + 86400, { onlyUnits: ["w", "d"] }),
-			).toBe("1 week and 1 day");
+			expect(formatSeconds(sevenDays + 86400, { onlyUnits: ["w", "d"] })).toBe(
+				"1 week and 1 day",
+			);
 		});
 	});
 
@@ -169,9 +181,9 @@ describe("main", () => {
 		});
 
 		test("months", () => {
-			expect(
-				formatSeconds(2678400, { onlyUnits: ["mo", "d"] }),
-			).toContain("1 month");
+			expect(formatSeconds(2678400, { onlyUnits: ["mo", "d"] })).toContain(
+				"1 month",
+			);
 		});
 
 		test("years and months together", () => {
@@ -199,11 +211,27 @@ describe("main", () => {
 		test("predictably formats calendar-aware units using anchorDate", () => {
 			const anchor = new Date("2026-02-01T00:00:00Z");
 			// 28 days = 2419200 seconds. In Feb 2026 (non-leap year), 28 days is exactly 1 month.
-			expect(formatSeconds(2419200, { anchorDate: anchor, onlyUnits: ["mo", "d"] })).toBe("1 month");
-			
+			expect(
+				formatSeconds(2419200, { anchorDate: anchor, onlyUnits: ["mo", "d"] }),
+			).toBe("1 month");
+
 			// In March 2026, 28 days is not a full month (requires 31 days).
 			const anchorMarch = new Date("2026-03-01T00:00:00Z");
-			expect(formatSeconds(2419200, { anchorDate: anchorMarch, onlyUnits: ["mo", "d"] })).toBe("28 days");
+			expect(
+				formatSeconds(2419200, {
+					anchorDate: anchorMarch,
+					onlyUnits: ["mo", "d"],
+				}),
+			).toBe("28 days");
+		});
+
+		test("rejects invalid dates and durations outside the Date range", () => {
+			expect(() =>
+				formatSeconds(1, { anchorDate: new Date(Number.NaN) }),
+			).toThrow("anchorDate must be a valid Date");
+			expect(() => formatSeconds(Number.MAX_VALUE)).toThrow(
+				"seconds exceed the supported Date range",
+			);
 		});
 	});
 });

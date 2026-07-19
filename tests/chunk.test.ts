@@ -3,7 +3,10 @@ import { chunk } from "../src";
 
 describe("chunk", () => {
 	test("chunks an array into smaller arrays of specified size (even multiple)", () => {
-		expect(chunk([1, 2, 3, 4], 2)).toEqual([[1, 2], [3, 4]]);
+		expect(chunk([1, 2, 3, 4], 2)).toEqual([
+			[1, 2],
+			[3, 4],
+		]);
 	});
 
 	test("chunks an array into smaller arrays with a remainder", () => {
@@ -27,10 +30,22 @@ describe("chunk", () => {
 		expect(chunk([1, 2, 3], 1)).toEqual([[1], [2], [3]]);
 	});
 
-	test("throws an error when size is 0 or negative (prevents infinite loop)", () => {
-		expect(() => chunk([1, 2, 3], 0)).toThrow("Size must be greater than 0");
-		expect(() => chunk([1, 2, 3], -1)).toThrow("Size must be greater than 0");
-		expect(() => chunk([1, 2, 3], -100)).toThrow("Size must be greater than 0");
+	test("rejects sizes that round below one", () => {
+		expect(() => chunk([1, 2, 3], 0)).toThrow("size must be greater than 0");
+		expect(() => chunk([1, 2, 3], -1)).toThrow("size must be greater than 0");
+		expect(() => chunk([1, 2, 3], 0.9)).toThrow("size must be greater than 0");
+	});
+
+	test("rejects non-finite sizes", () => {
+		for (const size of [
+			Number.NaN,
+			Number.POSITIVE_INFINITY,
+			Number.NEGATIVE_INFINITY,
+		]) {
+			expect(() => chunk([1, 2, 3], size)).toThrow(
+				"size must be a finite number",
+			);
+		}
 	});
 
 	test("handles float sizes by slicing up to the floor value correctly during iteration", () => {
@@ -47,9 +62,18 @@ describe("chunk", () => {
 		expect(chunks[0]?.[0]).toBe(obj);
 	});
 
+	test("accepts readonly arrays without mutating them", () => {
+		const input = [1, 2, 3] as const;
+		expect(chunk(input, 2)).toEqual([[1, 2], [3]]);
+		expect(input).toEqual([1, 2, 3]);
+	});
+
 	test("works with arrays of various types", () => {
 		expect(chunk(["a", "b", "c"], 2)).toEqual([["a", "b"], ["c"]]);
 		expect(chunk([true, false, true], 2)).toEqual([[true, false], [true]]);
-		expect(chunk([null, undefined, null], 2)).toEqual([[null, undefined], [null]]);
+		expect(chunk([null, undefined, null], 2)).toEqual([
+			[null, undefined],
+			[null],
+		]);
 	});
 });

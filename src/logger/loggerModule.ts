@@ -1,38 +1,55 @@
 import { inspect } from "node:util";
 import chalk from "chalk";
 
+/** Severity levels supported by the logger. */
 export type LogLevel = "NOTIF" | "ALERT" | "ERROR" | "DEBUG";
 const { cyan, yellow, red, magenta, dim, gray, bold } = chalk;
 
+/** A logger method that can write output or return its formatted value. */
 interface LogMethod {
+	/** Formats and returns a message without writing to the console. */
 	(message: unknown, raw: true): string;
+	/** Writes a formatted message to the console. */
 	(message: unknown, raw?: false): void;
 }
 
+/** Options for {@link createLogger}. */
 export interface LoggerOptions {
+	/** Name displayed in each log entry. */
 	name: string;
+	/** Locale or locales used for timestamps. Defaults to `"en-US"`. */
 	timeformat?: Intl.LocalesArgument;
+	/** Includes a timestamp in each entry. Defaults to `true`. */
 	includeTimestamps?: boolean;
+	/** Removes `node_modules` frames from error stacks. Defaults to `false`. */
 	filterNodeModules?: boolean;
+	/** Target width of divider lines. Defaults to `50`. */
 	dividerWidth?: number;
 	/**
-	 * Log level. Higher number = lower level logs ignored
-	 * ERROR: 3,
-	 * ALERT: 2,
-	 * NOTIF: 1,
-	 * DEBUG: 0,
+	 * Minimum severity written to the console. Defaults to `"DEBUG"`.
+	 *
+	 * Priority from lowest to highest is `DEBUG`, `NOTIF`, `ALERT`, `ERROR`.
 	 */
 	level?: LogLevel;
 }
 
+/** A structured console logger created by {@link createLogger}. */
 export interface Logger {
-	name: string;
-	level: LogLevel;
-	setLevel: (level: LogLevel) => Logger;
-	divider: (text: string) => void;
+	/** Name displayed in log entries. */
+	readonly name: string;
+	/** Current minimum severity. */
+	readonly level: LogLevel;
+	/** Updates the minimum severity and returns this logger. */
+	setLevel(level: LogLevel): Logger;
+	/** Writes a centered divider to `console.log`. */
+	divider(text: string): void;
+	/** Writes or formats a notification. */
 	notif: LogMethod;
+	/** Writes or formats an alert. */
 	alert: LogMethod;
+	/** Writes or formats an error. */
 	error: LogMethod;
+	/** Writes or formats a debug entry. */
 	debug: LogMethod;
 }
 
@@ -62,10 +79,11 @@ function getTimestamp(formatter: Intl.DateTimeFormat): string {
 	return `${formatter.format(d)}.${d.getMilliseconds().toString().padStart(3, "0")}`;
 }
 
-function sanitizeStack(stack: string): string {
+function sanitizeStack(stack: string, filterNodeModules: boolean): string {
 	return stack
 		.split("\n")
 		.slice(1)
+		.filter((line) => !filterNodeModules || !line.includes("node_modules"))
 		.map((line) => {
 			return line
 				.trim()
@@ -87,6 +105,7 @@ function formatMessage(
 	message: unknown,
 	name: string,
 	includeTimestamps: boolean,
+	filterNodeModules: boolean,
 	formatter: Intl.DateTimeFormat,
 ): string {
 	const timestamp = includeTimestamps
@@ -96,7 +115,7 @@ function formatMessage(
 	const prefix = `${timestamp}${dim("|")} ${name} ${dim("|")} ${levelLabel} ${dim("|")}`;
 
 	if (message instanceof Error) {
-		const sanitized = sanitizeStack(message.stack || "");
+		const sanitized = sanitizeStack(message.stack ?? "", filterNodeModules);
 		const formattedMessage = `${prefix} ${message.message}`;
 		if (sanitized) {
 			return `${formattedMessage}\n${sanitized}`;
@@ -112,14 +131,20 @@ function formatMessage(
 }
 
 /**
- * Chalk-based structured logger with timestamped, color-coded output.
- * Supports levels: `NOTIF`, `ALERT`, `ERROR`, `DEBUG`.
+ * Creates a Chalk-based structured logger.
+ *
+ * Each severity writes to its matching console method. Passing `true` as a log
+ * method's second argument returns the formatted string without writing it.
+ *
+ * @param options - Logger configuration.
+ * @returns A stateful logger instance.
  */
-export function createLogger(ops: LoggerOptions): Logger {
-	let currentLevel = ops.level ?? "DEBUG";
-	const includeTimestamps = ops.includeTimestamps ?? true;
-	const dividerWidth = ops.dividerWidth ?? 50;
-	const formatter = new Intl.DateTimeFormat(ops.timeformat ?? "en-US", {
+export function createLogger(options: LoggerOptions): Logger {
+	let currentLevel = options.level ?? "DEBUG";
+	const includeTimestamps = options.includeTimestamps ?? true;
+	const filterNodeModules = options.filterNodeModules ?? false;
+	const dividerWidth = Math.max(0, Math.floor(options.dividerWidth ?? 50));
+	const formatter = new Intl.DateTimeFormat(options.timeformat ?? "en-US", {
 		weekday: "short",
 		hour: "2-digit",
 		minute: "2-digit",
@@ -127,25 +152,39 @@ export function createLogger(ops: LoggerOptions): Logger {
 		hour12: false,
 	});
 
+	function log(level: LogLevel, message: unknown, raw: true): string;
+	function log(level: LogLevel, message: unknown, raw: false): void;
 	function log(
 		level: LogLevel,
 		message: unknown,
 		raw: boolean,
 	): string | undefined {
-		if (levelPriority[level] < levelPriority[currentLevel]) return;
 		const msg = formatMessage(
 			level,
 			message,
-			ops.name,
+			options.name,
 			includeTimestamps,
+			filterNodeModules,
 			formatter,
 		);
 		if (raw) return msg;
+		if (levelPriority[level] < levelPriority[currentLevel]) return;
 		void console[logMethods[level]](msg);
 	}
 
+	function createLogMethod(level: LogLevel): LogMethod {
+		function method(message: unknown, raw: true): string;
+		function method(message: unknown, raw?: false): void;
+		function method(message: unknown, raw = false): string | undefined {
+			if (raw) return log(level, message, true);
+			log(level, message, false);
+		}
+
+		return method;
+	}
+
 	const logger: Logger = {
-		name: ops.name,
+		name: options.name,
 		get level() {
 			return currentLevel;
 		},
@@ -160,14 +199,10 @@ export function createLogger(ops: LoggerOptions): Logger {
 			const right = dim("─".repeat(Math.floor(remaining / 2)));
 			console.log(`\n${left} ${bold(trimmed)} ${right}`);
 		},
-		notif: (message: unknown, raw?: boolean) =>
-			log("NOTIF", message, raw ?? false) as any,
-		alert: (message: unknown, raw?: boolean) =>
-			log("ALERT", message, raw ?? false) as any,
-		error: (message: unknown, raw?: boolean) =>
-			log("ERROR", message, raw ?? false) as any,
-		debug: (message: unknown, raw?: boolean) =>
-			log("DEBUG", message, raw ?? false) as any,
+		notif: createLogMethod("NOTIF"),
+		alert: createLogMethod("ALERT"),
+		error: createLogMethod("ERROR"),
+		debug: createLogMethod("DEBUG"),
 	};
 
 	return logger;

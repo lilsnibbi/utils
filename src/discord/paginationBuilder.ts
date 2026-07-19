@@ -13,6 +13,9 @@ import {
 	MediaGalleryBuilder,
 	type MentionableSelectMenuBuilder,
 	type Message,
+	type InteractionReplyOptions,
+	type MessagePayload,
+	type MessageReplyOptions,
 	ModalBuilder,
 	type RoleSelectMenuBuilder,
 	SectionBuilder,
@@ -34,7 +37,9 @@ export type PaginationMessageActionRow = ActionRowBuilder<
 	| MentionableSelectMenuBuilder
 >;
 
+/** Internal marker used by {@link PaginationBuilder.BUTTONS}. */
 export const BUTTONS_SYMBOL: unique symbol = Symbol("pagination-buttons");
+/** Internal marker used by {@link PaginationBuilder.DATA}. */
 export const DATA_SYMBOL: unique symbol = Symbol("pagination-data");
 
 /** Valid component types that can appear in a pagination page layout. */
@@ -49,6 +54,7 @@ export type PaginationInput =
 	| typeof BUTTONS_SYMBOL
 	| typeof DATA_SYMBOL;
 
+/** Normalized component stored by a container-mode paginator. */
 export type PaginationInternalComponent =
 	| { type: "buttons" }
 	| { type: "data" }
@@ -59,17 +65,27 @@ export type PaginationInternalComponent =
 	| { type: "gallery"; component: MediaGalleryBuilder }
 	| { type: "actionrow"; component: PaginationMessageActionRow };
 
+/** Appearance overrides for one pagination button. */
 export interface PaginationButtonConfig {
+	/** Button label. */
 	label?: string;
+	/** Discord emoji identifier or Unicode emoji. */
 	emoji?: string;
+	/** Discord button style. Defaults to `ButtonStyle.Secondary`. */
 	style?: ButtonStyle;
 }
 
+/** Appearance overrides for pagination controls. */
 export interface PaginationButtonOptions {
+	/** First-page button shown when skip buttons are enabled. */
 	first?: PaginationButtonConfig;
+	/** Previous-page button. */
 	back?: PaginationButtonConfig;
+	/** Next-page button. */
 	next?: PaginationButtonConfig;
+	/** Last-page button shown when skip buttons are enabled. */
 	last?: PaginationButtonConfig;
+	/** Page indicator and jump button. */
 	jump?: PaginationButtonConfig;
 }
 
@@ -77,8 +93,8 @@ export interface PaginationButtonOptions {
 export interface PaginationBaseOptions {
 	/** Number of list entries shown per page (default: 5). */
 	entriesPerPage?: number;
-	/** Key-value pairs replaced in rendered content. */
-	replacements?: Record<string, string>;
+	/** Literal key-value replacements applied to rendered page data. */
+	replacements?: Readonly<Record<string, string>>;
 	/** Whether the pagination message is ephemeral. */
 	ephemeral?: boolean;
 	/** Idle timeout in milliseconds (default: 60,000). */
@@ -87,7 +103,7 @@ export interface PaginationBaseOptions {
 	buttons?: PaginationButtonOptions;
 	/** Whether to show "First" and "Last" buttons. */
 	showSkipButtons?: boolean;
-	/** Callback when the collector ends. */
+	/** Callback invoked after the collector ends and controls are disabled. */
 	onEnd?: (
 		interaction?: ButtonInteraction | ChatInputCommandInteraction,
 	) => void | Promise<void>;
@@ -162,7 +178,7 @@ export class PaginationBuilder {
 
 	private readonly list: string[];
 	private readonly entriesPerPage: number;
-	private readonly replacements?: Record<string, string>;
+	private readonly replacements?: Readonly<Record<string, string>>;
 	private readonly ephemeral: boolean;
 	private readonly prefix: string;
 	private readonly totalPages: number;
@@ -189,7 +205,14 @@ export class PaginationBuilder {
 	private interaction?: ButtonInteraction | ChatInputCommandInteraction;
 	private replyMessage?: Message;
 
-	constructor(list: string[], options: PaginationOptions) {
+	/**
+	 * Creates a paginator.
+	 *
+	 * @param list - Entries rendered in order, separated by newlines.
+	 * @param options - Mode-specific layout and behavior options.
+	 * @throws {RangeError} If `entriesPerPage` or `idleTimeout` is invalid.
+	 */
+	constructor(list: readonly string[], options: PaginationOptions) {
 		const {
 			entriesPerPage = 5,
 			replacements,
@@ -200,10 +223,14 @@ export class PaginationBuilder {
 			onEnd,
 		} = options;
 
-		if (entriesPerPage <= 0)
-			throw new Error("entriesPerPage must be greater than 0");
+		if (!Number.isSafeInteger(entriesPerPage) || entriesPerPage <= 0) {
+			throw new RangeError("entriesPerPage must be a positive integer");
+		}
+		if (!Number.isSafeInteger(idleTimeout) || idleTimeout <= 0) {
+			throw new RangeError("idleTimeout must be a positive integer");
+		}
 
-		this.list = list;
+		this.list = [...list];
 		this.entriesPerPage = entriesPerPage;
 		this.replacements = replacements;
 		this.ephemeral = ephemeral;
@@ -228,6 +255,7 @@ export class PaginationBuilder {
 	/**
 	 * Sends the paginated message and starts the button collector.
 	 * @param target - The interaction or message to reply to.
+	 * @returns A promise that resolves after the initial message and collector are created.
 	 */
 	public async send(
 		target: ButtonInteraction | ChatInputCommandInteraction | Message,
@@ -277,10 +305,10 @@ export class PaginationBuilder {
 		});
 
 		collector.on("collect", async (btn) => {
+			if (!btn.customId.startsWith(this.prefix)) return;
 			if (btn.user.id !== userId) {
 				return void btn.deferUpdate();
 			}
-			if (!btn.customId.startsWith(this.prefix)) return;
 
 			this.ended = false;
 			collector.resetTimer();
@@ -355,21 +383,11 @@ export class PaginationBuilder {
 
 		if (this.isMessage) {
 			await (target as Message)
-				.reply(
-					payload as
-						| string
-						| import("discord.js").MessagePayload
-						| import("discord.js").MessageReplyOptions,
-				)
+				.reply(payload as string | MessagePayload | MessageReplyOptions)
 				.catch(() => {});
 		} else {
 			await (target as ButtonInteraction | ChatInputCommandInteraction)
-				.reply(
-					payload as
-						| string
-						| import("discord.js").MessagePayload
-						| import("discord.js").InteractionReplyOptions,
-				)
+				.reply(payload as string | MessagePayload | InteractionReplyOptions)
 				.catch(() => {});
 		}
 	}
@@ -543,10 +561,17 @@ export class PaginationBuilder {
 					),
 			);
 
-		await btn.showModal(modal).catch((e) => console.error(e));
+		const modalShown = await btn
+			.showModal(modal)
+			.then(() => true)
+			.catch(() => false);
+		if (!modalShown) return;
+
 		const modalSubmit = await btn
 			.awaitModalSubmit({
-				filter: (i) => i.customId === `${this.prefix}modal`,
+				filter: (interaction) =>
+					interaction.customId === `${this.prefix}modal` &&
+					interaction.user.id === btn.user.id,
 				time: 60_000,
 			})
 			.catch(() => null);

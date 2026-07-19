@@ -1,4 +1,8 @@
-export * from "./lib/discord";
-export * from "./lib/helpers";
-export * from "./lib/logger";
-export * from "./lib/error";
+/** Discord.js command, event, and pagination utilities. */
+export * from "./discord";
+/** Typed application errors. */
+export * from "./error";
+/** General-purpose utility functions. */
+export * from "./helpers";
+/** Structured console logging utilities. */
+export * from "./logger";

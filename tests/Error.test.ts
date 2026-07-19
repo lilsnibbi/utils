@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { AppError } from "../src";
 
+declare module "../src/error/Error" {
+	interface AppErrorCodes {
+		TestCode: true;
+	}
+}
+
 describe("AppError", () => {
 	test("should instantiate with basic message and code", () => {
 		const error = new AppError("Test message", "TestCode");
@@ -22,7 +28,9 @@ describe("AppError", () => {
 	});
 
 	test("should allow overriding omitStack to false", () => {
-		const error = new AppError("Test message", "TestCode", { omitStack: false });
+		const error = new AppError("Test message", "TestCode", {
+			omitStack: false,
+		});
 		expect(error.meta?.omitStack).toBe(false);
 		expect(error.stack).toBeDefined();
 	});
@@ -42,7 +50,10 @@ describe("AppError", () => {
 
 	test("should capture the cause in the meta and parent Error", () => {
 		const cause = new Error("Original cause");
-		const error = new AppError("Test message", "TestCode", { cause, omitStack: true });
+		const error = new AppError("Test message", "TestCode", {
+			cause,
+			omitStack: true,
+		});
 		expect(error.meta?.cause).toBe(cause);
 		expect(error.cause).toBe(cause);
 	});
@@ -51,5 +62,6 @@ describe("AppError", () => {
 		const error = new AppError("Test message", "TestCode", { reason: "test" });
 		expect(error.meta?.omitStack).toBe(true);
 		expect(error.meta?.reason).toBe("test");
+		expect(Object.isFrozen(error.meta)).toBe(true);
 	});
 });

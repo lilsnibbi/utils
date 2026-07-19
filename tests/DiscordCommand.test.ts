@@ -1,82 +1,84 @@
 import { describe, expect, test } from "bun:test";
-import { Client, SlashCommandBuilder } from "discord.js";
-import { defineCommand } from "../src";
+import {
+	type AutocompleteInteraction,
+	type Client,
+	SlashCommandBuilder,
+} from "discord.js";
+import {
+	defineCommand,
+	type DefinedCommand,
+	type DiscordCommandInteraction,
+} from "../src";
+
+const client = {} as Client;
+const interaction = {} as DiscordCommandInteraction;
+const autocompleteInteraction = {} as AutocompleteInteraction;
+
+function createDefinition(): DefinedCommand {
+	return {
+		data: new SlashCommandBuilder()
+			.setName("test")
+			.setDescription("Test command"),
+		execute: async () => {},
+	};
+}
 
 describe("defineCommand", () => {
-	test("should instantiate a command with data, execute and metadata", () => {
-		const data = new SlashCommandBuilder().setName("test").setDescription("test cmd");
-		const execute = async (_client: Client, _interaction: any) => {};
-		const command = defineCommand({
-			data,
-			execute,
-			metadata: { cooldown: 5 }
-		});
+	test("returns the original definition and preserves metadata", () => {
+		const definition = {
+			...createDefinition(),
+			metadata: { cooldown: 5 },
+		};
+		const command = defineCommand(definition);
+		const metadata = command.metadata as { cooldown: number } | undefined;
 
-		expect(command.data).toBe(data);
-		expect(command.execute).toBe(execute);
-		expect(command.metadata?.["cooldown"]).toBe(5);
+		expect(command).toBe(definition);
+		expect(metadata?.cooldown).toBe(5);
 	});
 
-	test("should allow omitting optional metadata", () => {
-		const data = new SlashCommandBuilder().setName("test").setDescription("test cmd");
-		const execute = async (_client: Client, _interaction: any) => {};
-		const command = defineCommand({
-			data,
-			execute
-		});
+	test("allows optional metadata and autocomplete to be omitted", () => {
+		const command = defineCommand(createDefinition());
 
 		expect(command.metadata).toBeUndefined();
-	});
-
-	test("should bubble up errors thrown in execute", async () => {
-		const data = new SlashCommandBuilder().setName("test").setDescription("test cmd");
-		const execute = async (_client: Client, _interaction: any) => {
-			throw new Error("Execute error");
-		};
-		const command = defineCommand({
-			data,
-			execute
-		});
-
-		await expect(command.execute({} as Client, {} as any)).rejects.toThrow("Execute error");
-	});
-
-	test("should allow omitting optional autocomplete", () => {
-		const data = new SlashCommandBuilder().setName("test").setDescription("test cmd");
-		const execute = async (_client: Client, _interaction: any) => {};
-		const command = defineCommand({
-			data,
-			execute
-		});
-
 		expect(command.autocomplete).toBeUndefined();
 	});
 
-	test("should instantiate a command with autocomplete", () => {
-		const data = new SlashCommandBuilder().setName("test").setDescription("test cmd");
-		const execute = async (_client: Client, _interaction: any) => {};
-		const autocomplete = async (_client: Client, _interaction: any) => {};
+	test("preserves autocomplete handlers", () => {
+		const autocomplete = async (
+			_client: Client,
+			_interaction: AutocompleteInteraction,
+		) => {};
 		const command = defineCommand({
-			data,
-			execute,
-			autocomplete
+			...createDefinition(),
+			autocomplete,
 		});
 
 		expect(command.autocomplete).toBe(autocomplete);
 	});
 
-	test("should bubble up errors thrown in autocomplete", async () => {
-		const data = new SlashCommandBuilder().setName("test").setDescription("test cmd");
-		const execute = async (_client: Client, _interaction: any) => {};
-		const autocomplete = async (_client: Client, _interaction: any) => {
-			throw new Error("Autocomplete error");
-		};
+	test("does not intercept execute failures", async () => {
 		const command = defineCommand({
-			data,
-			execute,
-			autocomplete
+			...createDefinition(),
+			execute: async () => {
+				throw new Error("execute failure");
+			},
 		});
 
-		await expect(command.autocomplete?.({} as Client, {} as any)).rejects.toThrow("Autocomplete error");
+		await expect(command.execute(client, interaction)).rejects.toThrow(
+			"execute failure",
+		);
+	});
+
+	test("does not intercept autocomplete failures", async () => {
+		const command = defineCommand({
+			...createDefinition(),
+			autocomplete: async () => {
+				throw new Error("autocomplete failure");
+			},
+		});
+
+		await expect(
+			command.autocomplete?.(client, autocompleteInteraction),
+		).rejects.toThrow("autocomplete failure");
 	});
 });
