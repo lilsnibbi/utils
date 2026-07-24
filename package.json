@@ -48,6 +48,10 @@
 	"exports": {
 		".": "./src/index.ts",
 		"./discord": "./src/discord/index.ts",
+		"./discord/command": "./src/discord/command.ts",
+		"./discord/components": "./src/discord/components.ts",
+		"./discord/event": "./src/discord/event.ts",
+		"./discord/pagination": "./src/discord/paginationBuilder.ts",
 		"./error": "./src/error/index.ts",
 		"./helpers": "./src/helpers/index.ts",
 		"./logger": "./src/logger/index.ts",
