@@ -1,12 +1,19 @@
 {
 	"name": "@lilsnibbi/utils",
+	"description": "Source-first TypeScript utilities for Bun and discord.js",
 	"main": "./src/index.ts",
 	"types": "./src/index.ts",
-	"version": "1.7.0",
+	"version": "2.0.0",
 	"type": "module",
 	"private": false,
 	"sideEffects": false,
 	"license": "MIT",
+	"keywords": [
+		"bun",
+		"discord.js",
+		"typescript",
+		"utilities"
+	],
 	"files": [
 		"src"
 	],
@@ -22,7 +29,6 @@
 		"access": "public"
 	},
 	"scripts": {
-		"bench": "bun benchmarks/isLink.bench.ts",
 		"check": "bun run lint && bun run typecheck && bun test",
 		"format": "bun x biome format --write .",
 		"lint": "bun x biome check .",
@@ -33,7 +39,7 @@
 		"typecheck": "bun x tsc --noEmit"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.4",
+		"@biomejs/biome": "^2.5.5",
 		"@types/bun": "^1.3.14",
 		"discord.js": "^14.27.0",
 		"mitata": "^1.0.34",
@@ -48,6 +54,10 @@
 	"exports": {
 		".": "./src/index.ts",
 		"./discord": "./src/discord/index.ts",
+		"./discord/command": "./src/discord/command.ts",
+		"./discord/components": "./src/discord/components.ts",
+		"./discord/event": "./src/discord/event.ts",
+		"./discord/pagination": "./src/discord/paginationBuilder.ts",
 		"./error": "./src/error/index.ts",
 		"./helpers": "./src/helpers/index.ts",
 		"./logger": "./src/logger/index.ts",

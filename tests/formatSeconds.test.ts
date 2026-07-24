@@ -234,4 +234,16 @@ describe("main", () => {
 			);
 		});
 	});
+
+	describe("output limits", () => {
+		test("limits the number of rendered units", () => {
+			expect(formatSeconds(3661, { maxUnits: 2 })).toBe("1 hour and 1 minute");
+		});
+
+		test("validates maxUnits", () => {
+			expect(() => formatSeconds(1, { maxUnits: 0 })).toThrow(
+				"maxUnits must be a positive integer",
+			);
+		});
+	});
 });

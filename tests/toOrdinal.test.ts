@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { toOrdinal } from "../src";
+import { ordinalSuffix, toOrdinal } from "../src";
 
 describe("main", () => {
 	describe("basic suffixes", () => {
@@ -17,6 +17,11 @@ describe("main", () => {
 
 		test("10th", () => {
 			expect(toOrdinal(10)).toBe("10th");
+		});
+
+		test("exposes suffixes separately", () => {
+			expect(ordinalSuffix(1)).toBe("st");
+			expect(ordinalSuffix(12)).toBe("th");
 		});
 	});
 

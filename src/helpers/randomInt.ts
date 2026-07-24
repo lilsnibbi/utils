@@ -36,3 +36,28 @@ export function randomInt(min: number, max: number): number {
 
 	return cryptoRandomInt(range) + minInt;
 }
+
+/**
+ * Returns a cryptographically selected item from a non-empty array.
+ *
+ * @throws {RangeError} If `values` is empty.
+ */
+export function randomItem<T>(values: readonly T[]): T {
+	if (!values.length) throw new RangeError("values must not be empty");
+	return values[randomInt(0, values.length - 1)] as T;
+}
+
+/**
+ * Returns a cryptographically shuffled shallow copy of an array.
+ */
+export function shuffle<T>(values: readonly T[]): T[] {
+	const result = [...values];
+	for (let index = result.length - 1; index > 0; index--) {
+		const swapIndex = randomInt(0, index);
+		[result[index], result[swapIndex]] = [
+			result[swapIndex] as T,
+			result[index] as T,
+		];
+	}
+	return result;
+}

@@ -202,5 +202,28 @@ describe("main", () => {
 			expect(output).not.toContain("node_modules");
 			expect(output).toContain("/project/src/app.ts");
 		});
+
+		test("supports dynamic levels, child loggers, and structured output", () => {
+			const entries: Array<{ level: string; name: string; formatted: string }> =
+				[];
+			const structured = createLogger({
+				name: "app",
+				includeTimestamps: false,
+				output: (entry) => entries.push(entry),
+			});
+			const child = structured.child("worker");
+
+			expect(structured.isEnabled("DEBUG")).toBe(true);
+			expect(structured.format("ALERT", "careful")).toContain("ALERT");
+			child.log("NOTIF", "started");
+
+			expect(entries).toEqual([
+				expect.objectContaining({
+					level: "NOTIF",
+					name: "app:worker",
+					formatted: expect.stringContaining("started"),
+				}),
+			]);
+		});
 	});
 });

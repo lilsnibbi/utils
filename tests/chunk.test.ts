@@ -76,4 +76,13 @@ describe("chunk", () => {
 			[null],
 		]);
 	});
+
+	test("accepts sets and generators", () => {
+		expect(chunk(new Set([1, 2, 3]), 2)).toEqual([[1, 2], [3]]);
+		function* values() {
+			yield "a";
+			yield "b";
+		}
+		expect(chunk(values(), 1)).toEqual([["a"], ["b"]]);
+	});
 });

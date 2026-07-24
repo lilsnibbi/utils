@@ -22,8 +22,12 @@ export type AppErrorCode = keyof AppErrorCodes extends never
 	? string
 	: keyof AppErrorCodes;
 
+/** Details registered for a specific application error code. */
+export type AppErrorDetails<C extends AppErrorCode> =
+	C extends keyof AppErrorCodes ? AppErrorCodes[C] : unknown;
+
 /** Additional diagnostic context attached to an {@link AppError}. */
-export interface AppErrorMeta {
+export interface AppErrorMeta<Details = unknown> {
 	/** A longer explanation of the failure. */
 	reason?: string;
 	/** The file or subsystem in which the error originated. */
@@ -32,12 +36,18 @@ export interface AppErrorMeta {
 	context?: string;
 	/** The original value that caused this error. */
 	cause?: unknown;
+	/** Structured details associated with the registered error code. */
+	details?: Details;
+	/** Searchable labels for logs and telemetry. */
+	tags?: readonly string[];
 	/** Removes the stack trace when `true`. Defaults to `true`. */
 	omitStack?: boolean;
 }
 
 /** A typed application error with optional diagnostic metadata. */
-export class AppError extends Error {
+export class AppError<C extends AppErrorCode = AppErrorCode> extends Error {
+	public readonly meta: Readonly<AppErrorMeta<AppErrorDetails<C>>>;
+
 	/**
 	 * Creates an application error.
 	 *
@@ -47,8 +57,8 @@ export class AppError extends Error {
 	 */
 	constructor(
 		message: string,
-		public readonly code: AppErrorCode,
-		public readonly meta?: AppErrorMeta,
+		public readonly code: C,
+		meta?: AppErrorMeta<AppErrorDetails<C>>,
 	) {
 		super(message, { cause: meta?.cause });
 
@@ -60,4 +70,30 @@ export class AppError extends Error {
 
 		if (this.meta.omitStack) this.stack = undefined;
 	}
+
+	/** Returns a structured summary while omitting the original cause. */
+	public toJSON(): {
+		name: string;
+		message: string;
+		code: C;
+		meta: Omit<AppErrorMeta<AppErrorDetails<C>>, "cause">;
+	} {
+		const { cause: _cause, ...meta } = this.meta;
+		return {
+			name: this.name,
+			message: this.message,
+			code: this.code,
+			meta,
+		};
+	}
+}
+
+/** Checks whether a value is an {@link AppError}, optionally with a specific code. */
+export function isAppError<C extends AppErrorCode>(
+	value: unknown,
+	code?: C,
+): value is AppError<C> {
+	return (
+		value instanceof AppError && (code === undefined || value.code === code)
+	);
 }

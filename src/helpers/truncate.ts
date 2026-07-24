@@ -12,7 +12,19 @@
  */
 const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
 
-export function truncate(value: string, maxLength: number): string {
+/** Options for {@link truncate}. */
+export interface TruncateOptions {
+	/** Marker appended to truncated text. Defaults to `"..."`. */
+	ellipsis?: string;
+	/** Avoids ending in the middle of a whitespace-delimited word when possible. */
+	preserveWords?: boolean;
+}
+
+export function truncate(
+	value: string,
+	maxLength: number,
+	options: TruncateOptions = {},
+): string {
 	if (maxLength === Number.POSITIVE_INFINITY) return value;
 	if (!Number.isFinite(maxLength) || maxLength < 0) {
 		throw new RangeError("maxLength must be a non-negative finite number");
@@ -22,10 +34,14 @@ export function truncate(value: string, maxLength: number): string {
 	if (value.length <= normalizedLength) return value;
 
 	const iterator = segmenter.segment(value)[Symbol.iterator]();
+	const ellipsis = options.ellipsis ?? "...";
+	const ellipsisLength = [...segmenter.segment(ellipsis)].length;
 	let count = 0;
 	let truncatedValue = "";
 	const contentLimit =
-		normalizedLength <= 3 ? normalizedLength : normalizedLength - 3;
+		normalizedLength <= ellipsisLength
+			? normalizedLength
+			: normalizedLength - ellipsisLength;
 
 	while (true) {
 		const next = iterator.next();
@@ -39,6 +55,11 @@ export function truncate(value: string, maxLength: number): string {
 		if (count > normalizedLength) break;
 	}
 
-	if (normalizedLength <= 3) return truncatedValue;
-	return `${truncatedValue}...`;
+	if (normalizedLength <= ellipsisLength) return truncatedValue;
+	if (options.preserveWords) {
+		const wordBoundary = truncatedValue.search(/\s+\S*$/u);
+		if (wordBoundary > 0)
+			truncatedValue = truncatedValue.slice(0, wordBoundary);
+	}
+	return `${truncatedValue}${ellipsis}`;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { randomInt } from "../src";
+import { randomInt, randomItem, shuffle } from "../src";
 
 describe("randomInt", () => {
 	test("generates an integer within a positive range (inclusive)", () => {
@@ -79,5 +79,14 @@ describe("randomInt", () => {
 		expect(result).toBeGreaterThanOrEqual(2);
 		expect(result).toBeLessThanOrEqual(4);
 		expect(Number.isInteger(result)).toBe(true);
+	});
+
+	test("selects items and shuffles without mutating input", () => {
+		const values = [1, 2, 3, 4] as const;
+		expect(values).toContain(randomItem(values));
+		const shuffled = shuffle(values);
+		expect(shuffled.toSorted()).toEqual([...values]);
+		expect(values).toEqual([1, 2, 3, 4]);
+		expect(() => randomItem([])).toThrow("values must not be empty");
 	});
 });
