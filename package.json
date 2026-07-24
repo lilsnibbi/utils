@@ -22,7 +22,6 @@
 		"access": "public"
 	},
 	"scripts": {
-		"bench": "bun benchmarks/isLink.bench.ts",
 		"check": "bun run lint && bun run typecheck && bun test",
 		"format": "bun x biome format --write .",
 		"lint": "bun x biome check .",
