@@ -1,12 +1,19 @@
 {
 	"name": "@lilsnibbi/utils",
+	"description": "Source-first TypeScript utilities for Bun and discord.js",
 	"main": "./src/index.ts",
 	"types": "./src/index.ts",
-	"version": "1.7.0",
+	"version": "2.0.0",
 	"type": "module",
 	"private": false,
 	"sideEffects": false,
 	"license": "MIT",
+	"keywords": [
+		"bun",
+		"discord.js",
+		"typescript",
+		"utilities"
+	],
 	"files": [
 		"src"
 	],
