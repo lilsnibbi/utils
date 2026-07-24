@@ -13,6 +13,15 @@ interface EmbedPayload {
 	components: ActionRowBuilder<ButtonBuilder>[];
 }
 
+function findButton(payload: EmbedPayload, suffix: string) {
+	return payload.components[0]
+		?.toJSON()
+		.components.find(
+			(component) =>
+				"custom_id" in component && component.custom_id.endsWith(suffix),
+		);
+}
+
 function createMessageHarness() {
 	let initialPayload: unknown;
 	const handlers = new Map<string, (value?: unknown) => unknown>();
@@ -89,12 +98,7 @@ describe("PaginationBuilder", () => {
 			footer: { text: "Page 1/2" },
 		});
 
-		const forwardButton = initial.components[0]
-			?.toJSON()
-			.components.find(
-				(component) =>
-					"custom_id" in component && component.custom_id.endsWith("forward"),
-			);
+		const forwardButton = findButton(initial, "forward");
 		const forwardId =
 			forwardButton && "custom_id" in forwardButton
 				? forwardButton.custom_id
@@ -115,6 +119,47 @@ describe("PaginationBuilder", () => {
 			description: "three",
 			footer: { text: "Page 2/2" },
 		});
+	});
+
+	test("handles skip controls and disables controls when collection ends", async () => {
+		const harness = createMessageHarness();
+		const onEnd = mock(async () => {});
+		const pagination = new PaginationBuilder(["one", "two", "three"], {
+			type: "embed",
+			embed: new EmbedBuilder(),
+			entriesPerPage: 1,
+			showSkipButtons: true,
+			onEnd,
+		});
+
+		await pagination.send(harness.target);
+		const initial = harness.getInitialPayload() as EmbedPayload;
+		const lastButton = findButton(initial, "last");
+		const lastId =
+			lastButton && "custom_id" in lastButton
+				? lastButton.custom_id
+				: undefined;
+
+		await harness.handlers.get("collect")?.({
+			user: { id: "owner" },
+			customId: lastId ?? "",
+			deferUpdate: mock(async () => {}),
+		});
+
+		const lastPage = harness.edit.mock.calls.at(-1)?.[0] as EmbedPayload;
+		expect(lastPage.embeds[0]?.toJSON().footer?.text).toBe("Page 3/3");
+
+		await harness.handlers.get("end")?.();
+
+		const ended = harness.edit.mock.calls.at(-1)?.[0] as EmbedPayload;
+		expect(
+			ended.components[0]
+				?.toJSON()
+				.components.every(
+					(component) => "disabled" in component && component.disabled,
+				),
+		).toBe(true);
+		expect(onEnd).toHaveBeenCalledWith(undefined);
 	});
 
 	test("renders container layouts and literal replacements", async () => {
