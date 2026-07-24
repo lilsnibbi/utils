@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { AppError } from "../src";
+import { AppError, isAppError } from "../src";
 
-declare module "../src/error/Error" {
+declare module "@lilsnibbi/utils/error" {
 	interface AppErrorCodes {
 		TestCode: true;
 	}
@@ -63,5 +63,27 @@ describe("AppError", () => {
 		expect(error.meta?.omitStack).toBe(true);
 		expect(error.meta?.reason).toBe("test");
 		expect(Object.isFrozen(error.meta)).toBe(true);
+	});
+
+	test("supports typed details, guards, and JSON serialization", () => {
+		const error = new AppError("Test message", "TestCode", {
+			details: true,
+			tags: ["test"],
+			cause: new Error("private"),
+		});
+
+		expect(isAppError(error)).toBe(true);
+		expect(isAppError(error, "TestCode")).toBe(true);
+		expect(isAppError(new Error("no"))).toBe(false);
+		expect(error.toJSON()).toEqual({
+			name: "AppError",
+			message: "Test message",
+			code: "TestCode",
+			meta: {
+				omitStack: true,
+				details: true,
+				tags: ["test"],
+			},
+		});
 	});
 });
