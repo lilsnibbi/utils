@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { isLink } from "../src";
+import { isLink, parseLink } from "../src";
 
 describe("isLink", () => {
 	test("returns true for standard HTTP/HTTPS URLs", () => {
@@ -77,5 +77,25 @@ describe("isLink", () => {
 		expect(isLink("HTTPS://example.com", { protocols: ["https:"] })).toBe(true);
 		expect(isLink("https://example.com", { protocols: ["HTTPS"] })).toBe(true);
 		expect(isLink("https://example.com", { protocols: [] })).toBe(false);
+	});
+
+	test("returns parsed URLs and supports host restrictions", () => {
+		expect(parseLink("https://example.com/path")?.pathname).toBe("/path");
+		expect(isLink("https://example.com", { hosts: ["EXAMPLE.COM"] })).toBe(
+			true,
+		);
+		expect(isLink("https://other.com", { hosts: ["example.com"] })).toBe(false);
+	});
+
+	test("can reject credentials and require a hostname", () => {
+		expect(
+			isLink("https://user:pass@example.com", { allowCredentials: false }),
+		).toBe(false);
+		expect(
+			isLink("mailto:test@example.com", {
+				protocols: ["mailto"],
+				requireHostname: true,
+			}),
+		).toBe(false);
 	});
 });

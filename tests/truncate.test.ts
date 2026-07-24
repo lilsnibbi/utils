@@ -68,4 +68,14 @@ describe("truncate", () => {
 		// slice(0, 6) = "012345", plus "..." = "012345..." -> length 9
 		expect(truncate("0123456789", 9)).toBe("012345...");
 	});
+
+	test("supports custom ellipses and word boundaries", () => {
+		expect(truncate("Hello world", 8, { ellipsis: "…" })).toBe("Hello w…");
+		expect(
+			truncate("Hello wonderful world", 12, {
+				ellipsis: "…",
+				preserveWords: true,
+			}),
+		).toBe("Hello…");
+	});
 });

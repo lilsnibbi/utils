@@ -2,6 +2,12 @@
 export interface IsLinkOptions {
 	/** Allowed protocols, with or without a trailing colon. Defaults to HTTP and HTTPS. */
 	protocols?: readonly string[];
+	/** Allowed hostnames. Matching is case-insensitive. */
+	hosts?: readonly string[];
+	/** Allows credentials embedded in the URL. Defaults to `true`. */
+	allowCredentials?: boolean;
+	/** Requires a non-empty hostname. Defaults to `false`. */
+	requireHostname?: boolean;
 }
 
 const DEFAULT_PROTOCOLS = ["http", "https"] as const;
@@ -14,9 +20,12 @@ const DEFAULT_PROTOCOLS = ["http", "https"] as const;
  *
  * @param value - The value to validate.
  * @param options - Optional protocol restrictions.
- * @returns `true` when the value is a valid URL with an allowed protocol.
+ * @returns The parsed URL, or `undefined` when validation fails.
  */
-export function isLink(value: string, options: IsLinkOptions = {}): boolean {
+export function parseLink(
+	value: string,
+	options: IsLinkOptions = {},
+): URL | undefined {
 	const protocols = new Set(
 		(options.protocols ?? DEFAULT_PROTOCOLS).map((protocol) =>
 			protocol.toLowerCase().replace(/:$/, ""),
@@ -25,10 +34,30 @@ export function isLink(value: string, options: IsLinkOptions = {}): boolean {
 
 	const normalizedValue = value.trim();
 	const colonIndex = normalizedValue.indexOf(":");
-	if (colonIndex < 1) return false;
+	if (colonIndex < 1) return;
 
 	const protocol = normalizedValue.slice(0, colonIndex).toLowerCase();
-	if (!protocols.has(protocol)) return false;
+	if (!protocols.has(protocol) || !URL.canParse(normalizedValue)) return;
 
-	return URL.canParse(normalizedValue);
+	const url = new URL(normalizedValue);
+	if (options.requireHostname && !url.hostname) return;
+	if (
+		options.allowCredentials === false &&
+		(url.username.length > 0 || url.password.length > 0)
+	) {
+		return;
+	}
+	if (options.hosts) {
+		const hosts = new Set(options.hosts.map((host) => host.toLowerCase()));
+		if (!hosts.has(url.hostname.toLowerCase())) return;
+	}
+
+	return url;
+}
+
+/**
+ * Checks whether a string is a parseable URL using the supplied restrictions.
+ */
+export function isLink(value: string, options: IsLinkOptions = {}): boolean {
+	return parseLink(value, options) !== undefined;
 }

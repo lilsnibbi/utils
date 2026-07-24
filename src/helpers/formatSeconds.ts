@@ -18,6 +18,10 @@ export interface FormatSecondsOptions {
 	anchorDate?: Date;
 	/** Overrides the rendering of each included unit. */
 	customFormatter?: (unit: TimeUnit, value: number, label: string) => string;
+	/** Maximum number of non-zero units to return. */
+	maxUnits?: number;
+	/** Locale used to join long-format parts. Defaults to `"en-US"`. */
+	locale?: Intl.LocalesArgument;
 }
 
 const UNITS: Record<TimeUnit, { label: string; short: string; ms: number }> = {
@@ -42,11 +46,6 @@ const ALL_UNITS_ORDER: readonly TimeUnit[] = [
 	"ms",
 ];
 
-const LIST_FORMATTER = new Intl.ListFormat("en-US", {
-	style: "long",
-	type: "conjunction",
-});
-
 /**
  * Converts a duration in seconds into a human-readable English string.
  *
@@ -70,7 +69,16 @@ export function formatSeconds(
 		format = "long",
 		rounding = "round",
 		customFormatter,
+		maxUnits,
+		locale = "en-US",
 	} = options;
+
+	if (
+		maxUnits !== undefined &&
+		(!Number.isSafeInteger(maxUnits) || maxUnits < 1)
+	) {
+		throw new RangeError("maxUnits must be a positive integer");
+	}
 
 	if (!Number.isFinite(seconds)) return format === "short" ? "0s" : "0 seconds";
 
@@ -169,6 +177,7 @@ export function formatSeconds(
 						? `${value}${label}`
 						: `${value} ${label}`,
 			);
+			if (parts.length === maxUnits) break;
 		}
 	}
 
@@ -180,7 +189,10 @@ export function formatSeconds(
 	let result: string;
 	if (format === "long" && parts.length > 1) {
 		try {
-			result = LIST_FORMATTER.format(parts);
+			result = new Intl.ListFormat(locale, {
+				style: "long",
+				type: "conjunction",
+			}).format(parts);
 		} catch {
 			const last = parts.pop();
 			result = `${parts.join(", ")} and ${last}`;

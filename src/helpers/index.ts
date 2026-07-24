@@ -1,3 +1,4 @@
+export * from "./async";
 export * from "./chunk";
 export * from "./formatSeconds";
 export * from "./isLink";

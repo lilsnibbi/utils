@@ -8,6 +8,11 @@ const suffixes: Record<Intl.LDMLPluralRule, string> = {
 	many: "th",
 };
 
+/** Returns the English ordinal suffix for a number. */
+export function ordinalSuffix(value: number): string {
+	return suffixes[pluralRules.select(value)] ?? "th";
+}
+
 /**
  * Converts a number to its English ordinal string (e.g. 1 → "1st", 12 → "12th").
  *
@@ -25,7 +30,5 @@ const suffixes: Record<Intl.LDMLPluralRule, string> = {
  * ```
  */
 export function toOrdinal(n: number): string {
-	const rule = pluralRules.select(n);
-	const suffix = suffixes[rule] ?? "th";
-	return `${n}${suffix}`;
+	return `${n}${ordinalSuffix(n)}`;
 }
