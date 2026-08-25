@@ -4,192 +4,222 @@ import {
 	ButtonBuilder,
 	type ButtonInteraction,
 	ButtonStyle,
-	type ChannelSelectMenuBuilder,
-	type ChatInputCommandInteraction,
 	ComponentType,
 	ContainerBuilder,
 	EmbedBuilder,
-	FileBuilder,
+	type FileBuilder,
 	LabelBuilder,
-	MediaGalleryBuilder,
-	type MentionableSelectMenuBuilder,
+	type MediaGalleryBuilder,
 	type Message,
 	ModalBuilder,
-	type RoleSelectMenuBuilder,
-	SectionBuilder,
-	SeparatorBuilder,
-	type StringSelectMenuBuilder,
+	type SectionBuilder,
+	type SeparatorBuilder,
 	TextDisplayBuilder,
 	TextInputBuilder,
 	TextInputStyle,
-	type UserSelectMenuBuilder,
 } from "discord.js";
+import type {
+	MessageActionRow,
+	PaginationInteraction,
+	PaginationTarget,
+} from "./types";
 
-/** An action row containing any interactive message component. */
-export type PaginationMessageActionRow = ActionRowBuilder<
-	| ButtonBuilder
-	| StringSelectMenuBuilder
-	| UserSelectMenuBuilder
-	| RoleSelectMenuBuilder
-	| ChannelSelectMenuBuilder
-	| MentionableSelectMenuBuilder
->;
-
+/** Marks where the navigation buttons render within a layout. */
 export const BUTTONS_SYMBOL: unique symbol = Symbol("pagination-buttons");
+
+/** Marks where the current page's entries render within a layout. */
 export const DATA_SYMBOL: unique symbol = Symbol("pagination-data");
 
-/** Valid component types that can appear in a pagination page layout. */
-export type PaginationInput =
-	| string
+/** A layout component that renders identically on every page. */
+export type PaginationStaticComponent =
 	| TextDisplayBuilder
 	| SectionBuilder
 	| SeparatorBuilder
 	| FileBuilder
 	| MediaGalleryBuilder
-	| PaginationMessageActionRow
+	| MessageActionRow;
+
+/**
+ * An entry in a container layout: a static component, a bare string (shorthand
+ * for a `TextDisplayBuilder`), or one of the two placement sentinels.
+ */
+export type PaginationInput =
+	| string
+	| PaginationStaticComponent
 	| typeof BUTTONS_SYMBOL
 	| typeof DATA_SYMBOL;
 
-export type PaginationInternalComponent =
-	| { type: "buttons" }
-	| { type: "data" }
-	| { type: "display"; component: TextDisplayBuilder }
-	| { type: "section"; component: SectionBuilder }
-	| { type: "separator"; component: SeparatorBuilder }
-	| { type: "file"; component: FileBuilder }
-	| { type: "gallery"; component: MediaGalleryBuilder }
-	| { type: "actionrow"; component: PaginationMessageActionRow };
+/** A layout entry after the sentinels have been resolved. */
+type PaginationComponent =
+	| { kind: "buttons" }
+	| { kind: "data" }
+	| { kind: "static"; component: PaginationStaticComponent };
 
+/** Appearance of a single navigation button. */
 export interface PaginationButtonConfig {
+	/** Replaces the default label. */
 	label?: string;
+	/** Adds an emoji alongside the label. */
 	emoji?: string;
+	/** Replaces the default `Secondary` style. */
 	style?: ButtonStyle;
 }
 
+/** Per-button appearance overrides. */
 export interface PaginationButtonOptions {
+	/** Jump to the first page. Only rendered when `showSkipButtons` is set. */
 	first?: PaginationButtonConfig;
+	/** Step back one page. */
 	back?: PaginationButtonConfig;
+	/** Step forward one page. */
 	next?: PaginationButtonConfig;
+	/** Jump to the last page. Only rendered when `showSkipButtons` is set. */
 	last?: PaginationButtonConfig;
+	/** Opens the "jump to page" modal. Defaults to a `current/total` counter. */
 	jump?: PaginationButtonConfig;
 }
 
-/** Shared options for all pagination modes. */
+/** Options shared by every pagination mode. */
 export interface PaginationBaseOptions {
-	/** Number of list entries shown per page (default: 5). */
+	/** Entries shown per page. Defaults to `5`. */
 	entriesPerPage?: number;
-	/** Key-value pairs replaced in rendered content. */
+	/** Literal substrings replaced in rendered page content. */
 	replacements?: Record<string, string>;
-	/** Whether the pagination message is ephemeral. */
+	/** Send the reply as ephemeral. Ignored for message targets. */
 	ephemeral?: boolean;
-	/** Idle timeout in milliseconds (default: 60,000). */
+	/** Idle timeout in milliseconds before the buttons disable. Defaults to `60_000`. */
 	idleTimeout?: number;
-	/** Custom button labels/emojis/styles. */
+	/** Per-button appearance overrides. */
 	buttons?: PaginationButtonOptions;
-	/** Whether to show "First" and "Last" buttons. */
+	/** Render the first/last skip buttons. Defaults to `false`. */
 	showSkipButtons?: boolean;
-	/** Callback when the collector ends. */
-	onEnd?: (
-		interaction?: ButtonInteraction | ChatInputCommandInteraction,
-	) => void | Promise<void>;
+	/** Called once the collector stops, after the buttons are disabled. */
+	onEnd?: (interaction?: PaginationInteraction) => void | Promise<void>;
 }
 
 /**
- * Options for **container** mode (Components V2).
- * Uses a `ContainerBuilder`-based layout with the `IsComponentsV2` message flag.
+ * Options for container mode: a Components V2 layout built from a
+ * `ContainerBuilder`, sent with the `IsComponentsV2` message flag.
  */
 export interface PaginationContainerOptions extends PaginationBaseOptions {
 	/** Selects container mode. */
 	type: "container";
-	/** Single layout template using sentinels `PaginationBuilder.DATA` and `PaginationBuilder.BUTTONS`. */
+	/**
+	 * The page template. Include {@link DiscordPagination.DATA} and
+	 * {@link DiscordPagination.BUTTONS} to place the entries and the navigation
+	 * buttons; everything else renders as-is on every page.
+	 */
 	layout: PaginationInput[];
-	/** Container accent color. */
+	/** Accent colour of the container's left edge. */
 	accentColor?: number;
-	/** Whether the container is a spoiler. */
+	/** Render the container behind a spoiler. */
 	spoiler?: boolean;
 }
 
 /**
- * Options for **embed** mode.
- * Uses a standard `EmbedBuilder` with an `ActionRow` for navigation buttons.
- * The embed's `description` and `footer` are reserved for page data and the page counter.
+ * Options for embed mode: a standard `EmbedBuilder` with the navigation buttons
+ * in an action row beneath it.
  */
 export interface PaginationEmbedOptions extends PaginationBaseOptions {
+	/**
+	 * The page template. Its `description` and `footer` are overwritten each
+	 * page with the entries and the page counter respectively.
+	 */
+	embed: EmbedBuilder;
 	/** Selects embed mode. */
 	type: "embed";
-	/** EmbedBuilder template. Description and footer are overwritten per page. */
-	embed: EmbedBuilder;
 }
 
-/** Discriminated union of all pagination option types. Use the `type` field to select a mode. */
+/** Every pagination mode, discriminated by `type`. */
 export type PaginationOptions =
 	| PaginationContainerOptions
 	| PaginationEmbedOptions;
 
+/** Resolved mode, holding only the fields that mode actually uses. */
+type PaginationMode =
+	| {
+			type: "container";
+			layout: PaginationComponent[];
+			accentColor?: number;
+			spoiler?: boolean;
+	  }
+	| { type: "embed"; embed: EmbedBuilder };
+
+const ALLOWED_MENTIONS = { parse: [] as const, repliedUser: false };
+const EMPTY_CONTENT = "No data to show";
+const MODAL_TIMEOUT = 60_000;
+
+/** Narrows a target to a `Message`; only interactions can be deferred. */
+function isMessageTarget(target: PaginationTarget): target is Message {
+	return !("deferReply" in target);
+}
+
 /**
- * Discord paginator supporting both **Components V2** (`ContainerBuilder`) and
- * **Embed** (`EmbedBuilder`) modes.
+ * A button-driven paginator for long lists, in either Components V2 container
+ * mode or classic embed mode.
+ *
+ * Navigation state lives on the instance, so one paginator drives one message.
+ * The collector is scoped to that message and to the user who triggered it, and
+ * every button carries a per-instance id prefix, so several paginators can run
+ * in the same channel without colliding. When the idle timeout elapses the
+ * buttons are disabled rather than removed.
  *
  * @example Container mode
  * ```ts
- * const pagination = new PaginationBuilder(entries, {
- *     type: "container",
- *     layout: [
- *         "# Leaderboard",
- *         new SeparatorBuilder(),
- *         PaginationBuilder.DATA,
- *         new SeparatorBuilder(),
- *         PaginationBuilder.BUTTONS,
- *     ],
- *     entriesPerPage: 5,
- *     accentColor: 0x5865f2,
- * });
+ * await new DiscordPagination(entries, {
+ *   type: "container",
+ *   layout: [
+ *     "# Leaderboard",
+ *     new SeparatorBuilder(),
+ *     DiscordPagination.DATA,
+ *     new SeparatorBuilder(),
+ *     DiscordPagination.BUTTONS,
+ *   ],
+ *   accentColor: 0x5865f2,
+ * }).send(interaction);
  * ```
  *
  * @example Embed mode
  * ```ts
- * const pagination = new PaginationBuilder(entries, {
- *     type: "embed",
- *     embed: new EmbedBuilder().setTitle("Leaderboard").setColor(0x5865f2),
- *     entriesPerPage: 5,
- * });
+ * await new DiscordPagination(entries, {
+ *   type: "embed",
+ *   embed: new EmbedBuilder().setTitle("Leaderboard").setColor(0x5865f2),
+ *   showSkipButtons: true,
+ * }).send(interaction);
  * ```
  */
-export class PaginationBuilder {
-	/** Marks where the pagination buttons should render. */
+export class DiscordPagination {
+	/** Sentinel marking where the navigation buttons render. */
 	static readonly BUTTONS: typeof BUTTONS_SYMBOL = BUTTONS_SYMBOL;
-	/** Marks where the paginated list entries should render. */
+	/** Sentinel marking where the current page's entries render. */
 	static readonly DATA: typeof DATA_SYMBOL = DATA_SYMBOL;
 
 	private readonly list: string[];
+	private readonly mode: PaginationMode;
 	private readonly entriesPerPage: number;
+	private readonly totalPages: number;
 	private readonly replacements?: Record<string, string>;
 	private readonly ephemeral: boolean;
-	private readonly prefix: string;
-	private readonly totalPages: number;
-	private readonly mode: "container" | "embed";
 	private readonly idleTimeout: number;
-	private readonly buttonOptions?: PaginationButtonOptions;
+	private readonly buttons?: PaginationButtonOptions;
 	private readonly showSkipButtons: boolean;
 	private readonly onEnd?: (
-		interaction?: ButtonInteraction | ChatInputCommandInteraction,
+		interaction?: PaginationInteraction,
 	) => void | Promise<void>;
 
-	// Container mode
-	private readonly layout?: PaginationInternalComponent[];
-	private readonly accentColor?: number;
-	private readonly spoiler?: boolean;
+	/** Prefix isolating this instance's button ids from any other paginator's. */
+	private readonly prefix: string;
 
-	// Embed mode
-	private readonly embedTemplate?: EmbedBuilder;
-
-	// Runtime state
 	private currentIndex = 0;
 	private ended = false;
-	private isMessage = false;
-	private interaction?: ButtonInteraction | ChatInputCommandInteraction;
+	private interaction?: PaginationInteraction;
 	private replyMessage?: Message;
 
+	/**
+	 * @param list - The entries to paginate, one per line.
+	 * @param options - See {@link PaginationOptions}.
+	 * @throws {RangeError} If `entriesPerPage` is not a positive integer.
+	 */
 	constructor(list: string[], options: PaginationOptions) {
 		const {
 			entriesPerPage = 5,
@@ -201,58 +231,52 @@ export class PaginationBuilder {
 			onEnd,
 		} = options;
 
-		if (entriesPerPage <= 0)
-			throw new Error("entriesPerPage must be greater than 0");
+		if (!Number.isInteger(entriesPerPage) || entriesPerPage <= 0) {
+			throw new RangeError("entriesPerPage must be a positive integer");
+		}
 
 		this.list = list;
 		this.entriesPerPage = entriesPerPage;
+		this.totalPages = Math.ceil(list.length / entriesPerPage);
 		this.replacements = replacements;
 		this.ephemeral = ephemeral;
 		this.idleTimeout = idleTimeout;
-		this.buttonOptions = buttons;
+		this.buttons = buttons;
 		this.showSkipButtons = showSkipButtons;
 		this.onEnd = onEnd;
 		this.prefix = `~PAGINATION_${randomUUIDv7()}_`;
-		this.totalPages = Math.ceil(list.length / entriesPerPage);
 
-		this.mode = options.type;
-
-		if (options.type === "container") {
-			this.layout = options.layout.map((input) => this.normalize(input));
-			this.accentColor = options.accentColor;
-			this.spoiler = options.spoiler;
-		} else {
-			this.embedTemplate = options.embed;
-		}
+		this.mode =
+			options.type === "container"
+				? {
+						type: "container",
+						layout: options.layout.map((input) => normalize(input)),
+						accentColor: options.accentColor,
+						spoiler: options.spoiler,
+					}
+				: { type: "embed", embed: options.embed };
 	}
 
 	/**
-	 * Sends the paginated message and starts the button collector.
-	 * @param target - The interaction or message to reply to.
+	 * Sends the first page and starts listening for button presses.
+	 *
+	 * An empty list short-circuits to a placeholder message with no collector.
+	 *
+	 * @param target - The interaction or message to reply to. Only the user who
+	 * triggered it can drive the resulting buttons.
 	 */
-	public async send(
-		target: ButtonInteraction | ChatInputCommandInteraction | Message,
-	): Promise<void> {
-		this.isMessage = !("deferReply" in target);
-		const userId = this.isMessage
-			? (target as Message).author.id
-			: (target as ButtonInteraction | ChatInputCommandInteraction).user.id;
+	public async send(target: PaginationTarget): Promise<void> {
+		if (!this.list.length) return this.sendEmpty(target);
 
-		if (!this.list.length) {
-			await this.sendEmpty(target);
-			return;
-		}
+		const userId = isMessageTarget(target) ? target.author.id : target.user.id;
 
-		if (this.isMessage) {
-			this.replyMessage = await (target as Message).reply(this.buildPayload());
+		if (isMessageTarget(target)) {
+			this.replyMessage = await target.reply(this.buildPayload());
 		} else {
-			const interaction = target as
-				| ButtonInteraction
-				| ChatInputCommandInteraction;
-			this.interaction = interaction;
+			this.interaction = target;
 
-			if (!interaction.replied && !interaction.deferred) {
-				const response = await interaction
+			if (!target.replied && !target.deferred) {
+				const response = await target
 					.deferReply({
 						withResponse: true,
 						flags: this.ephemeral ? ["Ephemeral"] : [],
@@ -260,11 +284,9 @@ export class PaginationBuilder {
 					.catch(() => null);
 				this.replyMessage =
 					response?.resource?.message ??
-					(await interaction.fetchReply().catch(() => undefined));
+					(await target.fetchReply().catch(() => undefined));
 			} else {
-				this.replyMessage = await interaction
-					.fetchReply()
-					.catch(() => undefined);
+				this.replyMessage = await target.fetchReply().catch(() => undefined);
 			}
 
 			await this.render();
@@ -277,38 +299,30 @@ export class PaginationBuilder {
 			time: this.idleTimeout,
 		});
 
-		collector.on("collect", async (btn) => {
-			if (btn.user.id !== userId) {
-				return void btn.deferUpdate();
-			}
-			if (!btn.customId.startsWith(this.prefix)) return;
+		collector.on("collect", async (button) => {
+			if (button.user.id !== userId) return void button.deferUpdate();
+			if (!button.customId.startsWith(this.prefix)) return;
 
 			this.ended = false;
 			collector.resetTimer();
 
-			if (btn.customId === `${this.prefix}info`) {
-				await this.handlePageJump(btn);
-			} else if (btn.customId === `${this.prefix}first`) {
+			const isJump = button.customId === `${this.prefix}info`;
+
+			if (isJump) {
+				await this.handlePageJump(button);
+			} else if (button.customId === `${this.prefix}first`) {
 				this.currentIndex = 0;
-			} else if (btn.customId === `${this.prefix}last`) {
-				this.currentIndex = (this.totalPages - 1) * this.entriesPerPage;
+			} else if (button.customId === `${this.prefix}last`) {
+				this.currentIndex = this.lastIndex;
 			} else {
-				this.currentIndex +=
-					btn.customId === `${this.prefix}back`
+				const step =
+					button.customId === `${this.prefix}back`
 						? -this.entriesPerPage
 						: this.entriesPerPage;
-				this.currentIndex = Math.max(
-					0,
-					Math.min(
-						this.currentIndex,
-						(this.totalPages - 1) * this.entriesPerPage,
-					),
-				);
+				this.currentIndex = clamp(this.currentIndex + step, 0, this.lastIndex);
 			}
 
-			if (btn.customId !== `${this.prefix}info`) {
-				await btn.deferUpdate().catch(() => {});
-			}
+			if (!isJump) await button.deferUpdate().catch(() => {});
 
 			await this.render();
 		});
@@ -316,221 +330,180 @@ export class PaginationBuilder {
 		collector.on("end", async () => {
 			this.ended = true;
 			await this.render();
-			if (this.onEnd) await this.onEnd(this.interaction);
+			await this.onEnd?.(this.interaction);
 		});
 	}
 
-	private async sendEmpty(
-		target: ButtonInteraction | ChatInputCommandInteraction | Message,
-	): Promise<void> {
-		if (this.mode === "embed" && !this.embedTemplate)
-			throw new Error(
-				"[@lilsnibbi/utils]: Pagination: embedTemplate is in a corrupted state",
-			);
+	/** Index of the first entry on the last page. */
+	private get lastIndex(): number {
+		return (this.totalPages - 1) * this.entriesPerPage;
+	}
 
-		const allowedMentions = { parse: [] as const, repliedUser: false };
+	/** Zero-based index of the page currently displayed. */
+	private get page(): number {
+		return Math.floor(this.currentIndex / this.entriesPerPage);
+	}
 
-		if (this.isMessage) {
-			const payload =
-				this.mode === "container"
+	/** The current page's entries, joined and with replacements applied. */
+	private pageContent(): string {
+		const start = this.page * this.entriesPerPage;
+		const content = this.list
+			.slice(start, start + this.entriesPerPage)
+			.join("\n");
+
+		if (!this.replacements) return content;
+
+		return Object.entries(this.replacements).reduce(
+			(acc, [key, value]) => acc.replaceAll(key, value),
+			content,
+		);
+	}
+
+	/** Replies with a placeholder when there is nothing to paginate. */
+	private async sendEmpty(target: PaginationTarget): Promise<void> {
+		const body =
+			this.mode.type === "container"
+				? {
+						components: [
+							new ContainerBuilder().addTextDisplayComponents(
+								new TextDisplayBuilder().setContent(EMPTY_CONTENT),
+							),
+						],
+					}
+				: {
+						embeds: [
+							new EmbedBuilder(this.mode.embed.toJSON()).setDescription(
+								EMPTY_CONTENT,
+							),
+						],
+					};
+
+		if (isMessageTarget(target)) {
+			await target
+				.reply(
+					"components" in body
+						? {
+								...body,
+								flags: ["IsComponentsV2"] as const,
+								allowedMentions: ALLOWED_MENTIONS,
+							}
+						: { ...body, allowedMentions: ALLOWED_MENTIONS },
+				)
+				.catch(() => {});
+			return;
+		}
+
+		await target
+			.reply(
+				"components" in body
 					? {
-							components: [
-								new ContainerBuilder().addTextDisplayComponents(
-									new TextDisplayBuilder().setContent("No data to show"),
-								),
-							],
-							flags: ["IsComponentsV2"] as const,
-							allowedMentions,
-						}
-					: {
-							embeds: [
-								new EmbedBuilder(this.embedTemplate?.toJSON()).setDescription(
-									"No data to show",
-								),
-							],
-							allowedMentions,
-						};
-			await (target as Message).reply(payload).catch(() => {});
-		} else {
-			const payload =
-				this.mode === "container"
-					? {
-							components: [
-								new ContainerBuilder().addTextDisplayComponents(
-									new TextDisplayBuilder().setContent("No data to show"),
-								),
-							],
+							...body,
 							flags: this.ephemeral
 								? (["Ephemeral", "IsComponentsV2"] as const)
 								: (["IsComponentsV2"] as const),
-							allowedMentions,
+							allowedMentions: ALLOWED_MENTIONS,
 						}
 					: {
-							embeds: [
-								new EmbedBuilder(this.embedTemplate?.toJSON()).setDescription(
-									"No data to show",
-								),
-							],
+							...body,
 							flags: this.ephemeral ? (["Ephemeral"] as const) : ([] as const),
-							allowedMentions,
-						};
-			await (target as ButtonInteraction | ChatInputCommandInteraction)
-				.reply(payload)
-				.catch(() => {});
-		}
+							allowedMentions: ALLOWED_MENTIONS,
+						},
+			)
+			.catch(() => {});
 	}
 
-	private normalize(input: PaginationInput): PaginationInternalComponent {
-		if (input === BUTTONS_SYMBOL) return { type: "buttons" };
-		if (input === DATA_SYMBOL) return { type: "data" };
-		if (typeof input === "string")
-			return {
-				type: "display",
-				component: new TextDisplayBuilder().setContent(input),
-			};
-		if (input instanceof TextDisplayBuilder)
-			return { type: "display", component: input };
-		if (input instanceof SeparatorBuilder)
-			return { type: "separator", component: input };
-		if (input instanceof SectionBuilder)
-			return { type: "section", component: input };
-		if (input instanceof FileBuilder) return { type: "file", component: input };
-		if (input instanceof MediaGalleryBuilder)
-			return { type: "gallery", component: input };
-		return { type: "actionrow", component: input };
-	}
-
+	/** Builds the message payload for the current page in the active mode. */
 	private buildPayload() {
-		if (this.mode === "embed") {
+		const mode = this.mode;
+
+		if (mode.type === "embed") {
 			return {
-				embeds: [this.generateEmbed()],
-				components: [this.getPaginationRow()],
-				allowedMentions: { parse: [] as const, repliedUser: false },
+				embeds: [
+					new EmbedBuilder(mode.embed.toJSON())
+						.setDescription(this.pageContent())
+						.setFooter({ text: `Page ${this.page + 1}/${this.totalPages}` }),
+				],
+				components: [this.buildButtonRow()],
+				allowedMentions: ALLOWED_MENTIONS,
 			};
 		}
 
 		return {
-			components: [this.generateContainer()],
+			components: [
+				new ContainerBuilder({
+					components: mode.layout.map((entry) => {
+						switch (entry.kind) {
+							case "buttons":
+								return this.buildButtonRow().toJSON();
+							case "data":
+								return new TextDisplayBuilder()
+									.setContent(this.pageContent())
+									.toJSON();
+							default:
+								return entry.component.toJSON();
+						}
+					}),
+					accent_color: mode.accentColor,
+					spoiler: mode.spoiler,
+				}),
+			],
 			flags: ["IsComponentsV2"] as const,
-			allowedMentions: { parse: [] as const, repliedUser: false },
+			allowedMentions: ALLOWED_MENTIONS,
 		};
 	}
 
-	private generateContainer(): ContainerBuilder {
-		if (!this.layout)
-			throw new Error(
-				"[@lilsnibbi/utils]: Pagination: layout is in a corrupted state",
-			);
+	/** Builds one navigation button. */
+	private button(
+		id: string,
+		defaultLabel: string,
+		config: PaginationButtonConfig | undefined,
+		disabled: boolean,
+	): ButtonBuilder {
+		const button = new ButtonBuilder()
+			.setCustomId(`${this.prefix}${id}`)
+			.setLabel(config?.label ?? defaultLabel)
+			.setStyle(config?.style ?? ButtonStyle.Secondary)
+			.setDisabled(disabled);
 
-		const page = Math.floor(this.currentIndex / this.entriesPerPage);
+		if (config?.emoji) button.setEmoji(config.emoji);
 
-		return new ContainerBuilder({
-			components: this.layout.map((comp) => {
-				switch (comp.type) {
-					case "buttons":
-						return this.getPaginationRow().toJSON();
-
-					case "data": {
-						const content = this.list
-							.slice(
-								page * this.entriesPerPage,
-								(page + 1) * this.entriesPerPage,
-							)
-							.join("\n");
-						return new TextDisplayBuilder()
-							.setContent(this.applyReplacements(content))
-							.toJSON();
-					}
-
-					default:
-						return comp.component.toJSON();
-				}
-			}),
-			accent_color: this.accentColor,
-			spoiler: this.spoiler,
-		});
+		return button;
 	}
 
-	private generateEmbed(): EmbedBuilder {
-		if (!this.embedTemplate)
-			throw new Error(
-				"[@lilsnibbi/utils]: Pagination: embedTemplate is in a corrupted state",
-			);
+	/** Builds the navigation row for the current page. */
+	private buildButtonRow(): ActionRowBuilder<ButtonBuilder> {
+		const atStart = this.ended || this.currentIndex === 0;
+		const atEnd =
+			this.ended || this.currentIndex + this.entriesPerPage >= this.list.length;
 
-		const page = Math.floor(this.currentIndex / this.entriesPerPage);
-		const content = this.list
-			.slice(page * this.entriesPerPage, (page + 1) * this.entriesPerPage)
-			.join("\n");
-
-		return new EmbedBuilder(this.embedTemplate.toJSON())
-			.setDescription(this.applyReplacements(content))
-			.setFooter({ text: `Page ${page + 1}/${this.totalPages}` });
-	}
-
-	private getPaginationRow(): ActionRowBuilder<ButtonBuilder> {
 		const row = new ActionRowBuilder<ButtonBuilder>();
 
 		if (this.showSkipButtons) {
-			const firstBtn = new ButtonBuilder()
-				.setCustomId(`${this.prefix}first`)
-				.setLabel(this.buttonOptions?.first?.label ?? "<<")
-				.setStyle(this.buttonOptions?.first?.style ?? ButtonStyle.Secondary)
-				.setDisabled(this.ended || this.currentIndex === 0);
-			if (this.buttonOptions?.first?.emoji)
-				firstBtn.setEmoji(this.buttonOptions.first.emoji);
-			row.addComponents(firstBtn);
+			row.addComponents(
+				this.button("first", "<<", this.buttons?.first, atStart),
+			);
 		}
 
-		const backBtn = new ButtonBuilder()
-			.setCustomId(`${this.prefix}back`)
-			.setLabel(this.buttonOptions?.back?.label ?? "<")
-			.setStyle(this.buttonOptions?.back?.style ?? ButtonStyle.Secondary)
-			.setDisabled(this.ended || this.currentIndex === 0);
-		if (this.buttonOptions?.back?.emoji)
-			backBtn.setEmoji(this.buttonOptions.back.emoji);
-
-		const infoBtn = new ButtonBuilder()
-			.setCustomId(`${this.prefix}info`)
-			.setLabel(
-				this.buttonOptions?.jump?.label ??
-					`${Math.floor(this.currentIndex / this.entriesPerPage) + 1}/${this.totalPages}`,
-			)
-			.setStyle(this.buttonOptions?.jump?.style ?? ButtonStyle.Secondary)
-			.setDisabled(this.ended || this.totalPages === 1);
-		if (this.buttonOptions?.jump?.emoji)
-			infoBtn.setEmoji(this.buttonOptions.jump.emoji);
-
-		const nextBtn = new ButtonBuilder()
-			.setCustomId(`${this.prefix}forward`)
-			.setLabel(this.buttonOptions?.next?.label ?? ">")
-			.setStyle(this.buttonOptions?.next?.style ?? ButtonStyle.Secondary)
-			.setDisabled(
-				this.ended ||
-					this.currentIndex + this.entriesPerPage >= this.list.length,
-			);
-		if (this.buttonOptions?.next?.emoji)
-			nextBtn.setEmoji(this.buttonOptions.next.emoji);
-
-		row.addComponents(backBtn, infoBtn, nextBtn);
+		row.addComponents(
+			this.button("back", "<", this.buttons?.back, atStart),
+			this.button(
+				"info",
+				`${this.page + 1}/${this.totalPages}`,
+				this.buttons?.jump,
+				this.ended || this.totalPages === 1,
+			),
+			this.button("forward", ">", this.buttons?.next, atEnd),
+		);
 
 		if (this.showSkipButtons) {
-			const lastBtn = new ButtonBuilder()
-				.setCustomId(`${this.prefix}last`)
-				.setLabel(this.buttonOptions?.last?.label ?? ">>")
-				.setStyle(this.buttonOptions?.last?.style ?? ButtonStyle.Secondary)
-				.setDisabled(
-					this.ended ||
-						this.currentIndex + this.entriesPerPage >= this.list.length,
-				);
-			if (this.buttonOptions?.last?.emoji)
-				lastBtn.setEmoji(this.buttonOptions.last.emoji);
-			row.addComponents(lastBtn);
+			row.addComponents(this.button("last", ">>", this.buttons?.last, atEnd));
 		}
 
 		return row;
 	}
 
-	private async handlePageJump(btn: ButtonInteraction): Promise<void> {
+	/** Prompts for a page number via a modal and jumps to it. */
+	private async handlePageJump(button: ButtonInteraction): Promise<void> {
 		const modal = new ModalBuilder()
 			.setCustomId(`${this.prefix}modal`)
 			.setTitle("Jump to page")
@@ -546,18 +519,19 @@ export class PaginationBuilder {
 					),
 			);
 
-		await btn.showModal(modal).catch((e) => console.error(e));
-		const modalSubmit = await btn
+		await button.showModal(modal).catch(() => {});
+
+		const submission = await button
 			.awaitModalSubmit({
 				filter: (i) => i.customId === `${this.prefix}modal`,
-				time: 60_000,
+				time: MODAL_TIMEOUT,
 			})
 			.catch(() => null);
 
-		if (!modalSubmit) return;
+		if (!submission) return;
 
 		const pageNumber = Number(
-			modalSubmit.fields.getTextInputValue(`${this.prefix}number`),
+			submission.fields.getTextInputValue(`${this.prefix}number`),
 		);
 
 		if (
@@ -565,42 +539,53 @@ export class PaginationBuilder {
 			pageNumber < 1 ||
 			pageNumber > this.totalPages
 		) {
-			await modalSubmit
+			await submission
 				.reply({
 					content: `Invalid page! Choose a number between **1** and **${this.totalPages}**.`,
 					flags: ["Ephemeral"],
-					allowedMentions: { parse: [], repliedUser: false },
+					allowedMentions: ALLOWED_MENTIONS,
 				})
 				.catch(() => null);
 			return;
 		}
 
-		await modalSubmit.deferUpdate().catch(() => null);
+		await submission.deferUpdate().catch(() => null);
 		this.currentIndex = (pageNumber - 1) * this.entriesPerPage;
 	}
 
-	private applyReplacements(content: string): string {
-		if (!this.replacements) return content;
-		return Object.entries(this.replacements).reduce(
-			(acc, [key, value]) => acc.replaceAll(key, value),
-			content,
-		);
-	}
-
+	/** Pushes the current page to the already-sent message. */
 	private async render(): Promise<void> {
 		try {
 			const payload = this.buildPayload();
 
-			if (this.isMessage && this.replyMessage) {
-				await this.replyMessage.edit(payload);
-			} else if (this.interaction) {
+			if (this.interaction) {
 				await this.interaction.editReply(payload);
+			} else if (this.replyMessage) {
+				await this.replyMessage.edit(payload);
 			}
 		} catch (error) {
-			const e = error as Error;
-			if (!e.message.includes("Unknown Message")) {
+			// The message was deleted while the collector was still running.
+			if (!(error as Error).message.includes("Unknown Message")) {
 				console.error("Failed to render pagination:", error);
 			}
 		}
 	}
+}
+
+/** Resolves a layout entry to its internal representation. */
+function normalize(input: PaginationInput): PaginationComponent {
+	if (input === BUTTONS_SYMBOL) return { kind: "buttons" };
+	if (input === DATA_SYMBOL) return { kind: "data" };
+	if (typeof input === "string") {
+		return {
+			kind: "static",
+			component: new TextDisplayBuilder().setContent(input),
+		};
+	}
+	return { kind: "static", component: input };
+}
+
+/** Clamps `value` into the inclusive range `[min, max]`. */
+function clamp(value: number, min: number, max: number): number {
+	return Math.max(min, Math.min(value, max));
 }
