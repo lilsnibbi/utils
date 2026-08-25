@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: test spies */
 import { afterEach, beforeEach, describe, expect, test, spyOn } from "bun:test";
-import { LoggerModule } from "../src";
+import { LoggerModule } from "../../src/logger";
 
 let logger: LoggerModule;
 let logSpy: any;

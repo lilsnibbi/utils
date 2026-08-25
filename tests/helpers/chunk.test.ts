@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { chunk } from "../src";
+import { chunk } from "../../src/helpers";
 
 describe("chunk", () => {
 	test("chunks an array into smaller arrays of specified size (even multiple)", () => {

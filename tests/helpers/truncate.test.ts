@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { truncate } from "../src";
+import { truncate } from "../../src/helpers";
 
 describe("truncate", () => {
 	test("truncates a string and appends an ellipsis when it exceeds max length", () => {

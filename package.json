@@ -1,10 +1,22 @@
 {
 	"name": "@lilsnibbi/utils",
-	"main": "./src/index.ts",
-	"version": "1.5.3",
-	"type": "module",
-	"private": false,
+	"version": "2.0.0",
+	"description": "Personal TypeScript utility library for the Bun runtime.",
 	"license": "MIT",
+	"private": false,
+	"type": "module",
+	"main": "./src/index.ts",
+	"types": "./src/index.ts",
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"import": "./src/index.ts"
+		},
+		"./*": {
+			"types": "./src/*/index.ts",
+			"import": "./src/*/index.ts"
+		}
+	},
 	"files": [
 		"src"
 	],
@@ -13,17 +25,14 @@
 	},
 	"engineStrict": true,
 	"repository": {
-		"url": "https://github.com/lilsnibbi/utils"
+		"type": "git",
+		"url": "git+https://github.com/lilsnibbi/utils.git"
 	},
 	"scripts": {
+		"check": "bun tsc --noEmit && bun biome check .",
+		"pretty": "bun biome format --write .",
 		"pub": "bun publish --access public",
-		"pretty": "bun biome format --write ."
-	},
-	"types": "./src/index.ts",
-	"devDependencies": {
-		"@biomejs/biome": "^2.4.15",
-		"@types/bun": "^1.3.14",
-		"typescript": "^6.0.3"
+		"test": "bun test"
 	},
 	"dependencies": {
 		"chalk": "^5.6.2"
@@ -31,10 +40,14 @@
 	"peerDependencies": {
 		"discord.js": "^14.26.4"
 	},
-	"exports": {
-		"./*": {
-			"types": "./src/lib/*/index.ts",
-			"import": "./src/lib/*/index.ts"
+	"peerDependenciesMeta": {
+		"discord.js": {
+			"optional": true
 		}
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.15",
+		"@types/bun": "^1.3.14",
+		"typescript": "^6.0.3"
 	}
 }

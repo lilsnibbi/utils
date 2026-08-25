@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { randomInt } from "../src";
+import { randomInt } from "../../src/helpers";
 
 describe("randomInt", () => {
 	test("generates an integer within a positive range (inclusive)", () => {

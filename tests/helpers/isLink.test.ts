@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { isLink } from "../src";
+import { isLink } from "../../src/helpers";
 
 describe("isLink", () => {
 	test("returns true for standard HTTP/HTTPS URLs", () => {

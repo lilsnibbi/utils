@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { formatSeconds } from "../src";
+import { formatSeconds } from "../../src/helpers";
 
 describe("main", () => {
 	describe("long format (default)", () => {

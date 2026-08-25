@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { toOrdinal } from "../src";
+import { toOrdinal } from "../../src/helpers";
 
 describe("main", () => {
 	describe("basic suffixes", () => {
