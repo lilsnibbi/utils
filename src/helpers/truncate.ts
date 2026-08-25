@@ -1,12 +1,24 @@
 /**
- * Truncates a string to a specified length and appends an ellipsis if it exceeds that length.
- * @param str - The string to truncate.
- * @param maxLength - The maximum length of the string.
- * @returns The truncated string.
+ * Shortens a string to at most `maxLength` characters, ending in an ellipsis.
+ *
+ * The ellipsis counts toward the budget, so the result never exceeds
+ * `maxLength`. When `maxLength` is 3 or less there is no room for it and the
+ * string is hard-cut instead.
+ *
+ * @param value - The string to shorten.
+ * @param maxLength - Maximum length of the result, ellipsis included.
+ * @returns `value` unchanged if it already fits, otherwise the shortened string.
+ * @throws {RangeError} If `maxLength` is negative.
+ *
+ * @example
+ * ```ts
+ * truncate("Hello, world!", 8); // "Hello..."
+ * truncate("Hello", 10);        // "Hello"
+ * ```
  */
-export function truncate(str: string, maxLength: number): string {
-	if (maxLength < 0) throw new Error("maxLength cannot be negative");
-	if (str.length <= maxLength) return str;
-	if (maxLength <= 3) return str.slice(0, maxLength);
-	return `${str.slice(0, maxLength - 3)}...`;
+export function truncate(value: string, maxLength: number): string {
+	if (maxLength < 0) throw new RangeError("maxLength cannot be negative");
+	if (value.length <= maxLength) return value;
+	if (maxLength <= 3) return value.slice(0, maxLength);
+	return `${value.slice(0, maxLength - 3)}...`;
 }

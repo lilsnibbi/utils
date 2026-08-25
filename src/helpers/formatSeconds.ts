@@ -1,9 +1,32 @@
-type TimeUnitTypes = "y" | "mo" | "w" | "d" | "h" | "m" | "s" | "ms";
+/** Time units {@link formatSeconds} can emit, largest to smallest. */
+export type TimeUnit = "y" | "mo" | "w" | "d" | "h" | "m" | "s" | "ms";
 
-const UNITS: Record<
-	TimeUnitTypes,
-	{ label: string; short: string; ms: number }
-> = {
+/** How the smallest emitted unit is rounded. */
+export type RoundingMode = "floor" | "ceil" | "round";
+
+/** Output style: full words or single-letter abbreviations. */
+export type DurationFormat = "long" | "short";
+
+/** Options accepted by {@link formatSeconds}. */
+export interface FormatSecondsOptions {
+	/** Emit units whose value is zero. Defaults to `false`. */
+	includeZeroUnits?: boolean;
+	/** Restrict output to these units. Defaults to all of them. */
+	onlyUnits?: TimeUnit[];
+	/** `"long"` for full words, `"short"` for abbreviations. Defaults to `"long"`. */
+	format?: DurationFormat;
+	/** How to round the smallest emitted unit. Defaults to `"round"`. */
+	rounding?: RoundingMode;
+	/**
+	 * Renders a single unit, replacing the built-in rendering.
+	 * @param unit - The unit being rendered.
+	 * @param value - Its numeric value.
+	 * @param label - The pluralised long label, or the short label in `"short"` mode.
+	 */
+	customFormatter?: (unit: TimeUnit, value: number, label: string) => string;
+}
+
+const UNITS: Record<TimeUnit, { label: string; short: string; ms: number }> = {
 	y: { label: "year", short: "y", ms: 31536000000 },
 	mo: { label: "month", short: "mo", ms: 2628000000 },
 	w: { label: "week", short: "w", ms: 604800000 },
@@ -14,40 +37,30 @@ const UNITS: Record<
 	ms: { label: "millisecond", short: "ms", ms: 1 },
 };
 
-const ALL_UNITS_ORDER: TimeUnitTypes[] = [
-	"y",
-	"mo",
-	"w",
-	"d",
-	"h",
-	"m",
-	"s",
-	"ms",
-];
+const ALL_UNITS_ORDER: TimeUnit[] = ["y", "mo", "w", "d", "h", "m", "s", "ms"];
 
 /**
- * Calendar-aware duration formatter. Converts raw seconds into a human-readable string.
- * @param seconds - The duration in seconds to format.
- * @param options - Formatting options.
- * @param options.format - `"long"` (default) for full words, `"short"` for abbreviated units.
- * @param options.onlyUnits - Restrict output to specific time units.
- * @param options.includeZeroUnits - Include units with a value of zero.
- * @param options.customFormatter - Override per-unit rendering.
- * @returns A formatted duration string (e.g. `"2 hours and 30 minutes"` or `"2h 30m"`).
+ * Converts a duration in seconds into a human-readable string.
+ *
+ * Years and months are calendar-aware: they are measured against the current
+ * date rather than fixed averages, so the result respects leap years and
+ * varying month lengths. Smaller units fall back to fixed arithmetic.
+ *
+ * @param seconds - The duration in seconds. Non-finite values yield zero.
+ * @param options - See {@link FormatSecondsOptions}.
+ * @returns The formatted duration, negated with a leading `-` when `seconds` is
+ * negative.
+ *
+ * @example
+ * ```ts
+ * formatSeconds(9000);                      // "2 hours and 30 minutes"
+ * formatSeconds(9000, { format: "short" }); // "2h 30m"
+ * formatSeconds(9000, { onlyUnits: ["h"] }); // "3 hours"
+ * ```
  */
 export function formatSeconds(
 	seconds: number,
-	options: {
-		includeZeroUnits?: boolean;
-		onlyUnits?: TimeUnitTypes[];
-		format?: "long" | "short";
-		rounding?: "floor" | "ceil" | "round";
-		customFormatter?: (
-			unit: TimeUnitTypes,
-			value: number,
-			label: string,
-		) => string;
-	} = {},
+	options: FormatSecondsOptions = {},
 ): string {
 	const {
 		includeZeroUnits = false,
@@ -71,7 +84,7 @@ export function formatSeconds(
 	// If we are rounding to a unit larger than ms, we should do it at that level
 	let totalMs = Math.round(absSeconds * 1000);
 
-	const diff: Partial<Record<TimeUnitTypes, number>> = {};
+	const diff: Partial<Record<TimeUnit, number>> = {};
 	const now = new Date();
 	const end = new Date(now.getTime() + totalMs);
 

@@ -30,17 +30,24 @@ describe("chunk", () => {
 		expect(chunk([1, 2, 3], 1)).toEqual([[1], [2], [3]]);
 	});
 
-	test("throws an error when size is 0 or negative (prevents infinite loop)", () => {
-		expect(() => chunk([1, 2, 3], 0)).toThrow("Size must be greater than 0");
-		expect(() => chunk([1, 2, 3], -1)).toThrow("Size must be greater than 0");
-		expect(() => chunk([1, 2, 3], -100)).toThrow("Size must be greater than 0");
+	test("throws when size is 0 or negative (prevents infinite loop)", () => {
+		expect(() => chunk([1, 2, 3], 0)).toThrow(RangeError);
+		expect(() => chunk([1, 2, 3], -1)).toThrow(
+			"size must be a positive integer",
+		);
+		expect(() => chunk([1, 2, 3], -100)).toThrow(
+			"size must be a positive integer",
+		);
 	});
 
-	test("handles float sizes by slicing up to the floor value correctly during iteration", () => {
-		// slice(0, 2.5) evaluates to slice(0, 2), effectively chunking by 2 but incrementing i by 2.5
-		// This tests the engine's resilience, though integers should ideally be provided
-		const res = chunk([1, 2, 3, 4, 5], 2.5);
-		expect(Array.isArray(res)).toBe(true);
+	test("throws on non-integer sizes rather than mis-slicing", () => {
+		// slice(0, 2.5) floors to slice(0, 2) while i advances by 2.5, which
+		// silently drops elements — reject it instead.
+		expect(() => chunk([1, 2, 3, 4, 5], 2.5)).toThrow(RangeError);
+		expect(() => chunk([1, 2, 3], Number.NaN)).toThrow(RangeError);
+		expect(() => chunk([1, 2, 3], Number.POSITIVE_INFINITY)).toThrow(
+			RangeError,
+		);
 	});
 
 	test("preserves reference to objects inside chunks", () => {
