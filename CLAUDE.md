@@ -10,7 +10,7 @@ build step, no compiled output.
 - **Runtime**: Bun
 - **Language**: TypeScript (strict, ESNext, bundler module resolution)
 - **Linter/Formatter**: Biome
-- **Package manager**: `bun` (exact installs via `bunfig.toml`)
+- **Package manager**: `bun`
 
 ## Branch Strategy
 
@@ -27,8 +27,8 @@ bun run pretty    # format with Biome
 bun run pub       # publish to npm (bun publish --access public)
 ```
 
-`bun run check` must pass before committing. CI runs the suite on every push
-via GitHub Actions.
+`bun run check` must pass before committing. There is no CI workflow — the
+checks are local only.
 
 ## Project Structure
 
