@@ -17,7 +17,9 @@ describe("main", () => {
 
 		test("joins multiple parts with commas and trailing 'and' (Oxford comma)", () => {
 			expect(formatSeconds(3661)).toBe("1 hour, 1 minute, and 1 second");
-			expect(formatSeconds(90061)).toBe("1 day, 1 hour, 1 minute, and 1 second");
+			expect(formatSeconds(90061)).toBe(
+				"1 day, 1 hour, 1 minute, and 1 second",
+			);
 		});
 	});
 
@@ -59,17 +61,27 @@ describe("main", () => {
 
 	describe("rounding options", () => {
 		test("floor", () => {
-			expect(formatSeconds(1.9, { rounding: "floor" })).toBe("1 second and 900 milliseconds");
-			expect(formatSeconds(1.999, { rounding: "floor", onlyUnits: ["s"] })).toBe("1 second");
+			expect(formatSeconds(1.9, { rounding: "floor" })).toBe(
+				"1 second and 900 milliseconds",
+			);
+			expect(
+				formatSeconds(1.999, { rounding: "floor", onlyUnits: ["s"] }),
+			).toBe("1 second");
 		});
 
 		test("ceil", () => {
-			expect(formatSeconds(1.1, { rounding: "ceil", onlyUnits: ["s"] })).toBe("2 seconds");
+			expect(formatSeconds(1.1, { rounding: "ceil", onlyUnits: ["s"] })).toBe(
+				"2 seconds",
+			);
 		});
 
 		test("round (default)", () => {
-			expect(formatSeconds(1.5, { rounding: "round", onlyUnits: ["s"] })).toBe("2 seconds");
-			expect(formatSeconds(1.4, { rounding: "round", onlyUnits: ["s"] })).toBe("1 second");
+			expect(formatSeconds(1.5, { rounding: "round", onlyUnits: ["s"] })).toBe(
+				"2 seconds",
+			);
+			expect(formatSeconds(1.4, { rounding: "round", onlyUnits: ["s"] })).toBe(
+				"1 second",
+			);
 		});
 	});
 
@@ -99,9 +111,9 @@ describe("main", () => {
 			expect(formatSeconds(sevenDays, { onlyUnits: ["w", "d"] })).toBe(
 				"1 week",
 			);
-			expect(
-				formatSeconds(sevenDays + 86400, { onlyUnits: ["w", "d"] }),
-			).toBe("1 week and 1 day");
+			expect(formatSeconds(sevenDays + 86400, { onlyUnits: ["w", "d"] })).toBe(
+				"1 week and 1 day",
+			);
 		});
 	});
 
@@ -169,9 +181,9 @@ describe("main", () => {
 		});
 
 		test("months", () => {
-			expect(
-				formatSeconds(2678400, { onlyUnits: ["mo", "d"] }),
-			).toContain("1 month");
+			expect(formatSeconds(2678400, { onlyUnits: ["mo", "d"] })).toContain(
+				"1 month",
+			);
 		});
 
 		test("years and months together", () => {

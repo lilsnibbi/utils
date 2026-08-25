@@ -16,7 +16,11 @@ describe("isLink", () => {
 	});
 
 	test("returns true for URLs with paths, queries, and fragments", () => {
-		expect(isLink("https://api.github.com/users/oven-sh/repos?sort=updated&direction=desc#readme")).toBe(true);
+		expect(
+			isLink(
+				"https://api.github.com/users/oven-sh/repos?sort=updated&direction=desc#readme",
+			),
+		).toBe(true);
 	});
 
 	test("returns true for non-HTTP protocols", () => {
@@ -32,7 +36,7 @@ describe("isLink", () => {
 		expect(isLink("google.com")).toBe(false);
 		expect(isLink("www.google.com")).toBe(false);
 		// 'localhost:3000' is technically a valid URI because 'localhost:' is treated as the scheme
-		expect(isLink("localhost:3000")).toBe(true); 
+		expect(isLink("localhost:3000")).toBe(true);
 	});
 
 	test("returns false for invalid or malformed strings", () => {

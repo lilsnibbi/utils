@@ -19,7 +19,9 @@ describe("truncate", () => {
 
 	test("throws an error if maxLength is negative", () => {
 		expect(() => truncate("Hello", -1)).toThrow("maxLength cannot be negative");
-		expect(() => truncate("Hello", -10)).toThrow("maxLength cannot be negative");
+		expect(() => truncate("Hello", -10)).toThrow(
+			"maxLength cannot be negative",
+		);
 	});
 
 	test("handles extremely short max lengths properly (<= 3)", () => {
@@ -41,7 +43,7 @@ describe("truncate", () => {
 		expect(truncate("🚀🚀🚀🚀", 5)).toBe("🚀...");
 		// Family emoji is 11 code units: 👨(2) + ZWJ(1) + 👩(2) + ZWJ(1) + 👧(2) + ZWJ(1) + 👦(2)
 		// slice(0, 2) gives just 👨
-		expect(truncate("👨‍👩‍👧‍👦", 5)).toBe("👨..."); 
+		expect(truncate("👨‍👩‍👧‍👦", 5)).toBe("👨...");
 	});
 
 	test("truncates exactly on boundaries without duplicating the final character", () => {

@@ -3,7 +3,10 @@ import { chunk } from "../../src/helpers";
 
 describe("chunk", () => {
 	test("chunks an array into smaller arrays of specified size (even multiple)", () => {
-		expect(chunk([1, 2, 3, 4], 2)).toEqual([[1, 2], [3, 4]]);
+		expect(chunk([1, 2, 3, 4], 2)).toEqual([
+			[1, 2],
+			[3, 4],
+		]);
 	});
 
 	test("chunks an array into smaller arrays with a remainder", () => {
@@ -50,6 +53,9 @@ describe("chunk", () => {
 	test("works with arrays of various types", () => {
 		expect(chunk(["a", "b", "c"], 2)).toEqual([["a", "b"], ["c"]]);
 		expect(chunk([true, false, true], 2)).toEqual([[true, false], [true]]);
-		expect(chunk([null, undefined, null], 2)).toEqual([[null, undefined], [null]]);
+		expect(chunk([null, undefined, null], 2)).toEqual([
+			[null, undefined],
+			[null],
+		]);
 	});
 });
